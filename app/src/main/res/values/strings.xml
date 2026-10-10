@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">BRNV Currency Converter</string>
+    <string name="converter_title">Currency converter</string>
+    <string name="converter_hint">Edit any amount. Every currency follows.</string>
+    <string name="add_currency">＋ Add currency</string>
+    <string name="rate_disclaimer">Indicative rates, updated daily. Bank and payment provider rates may differ.</string>
+    <string name="rate_attribution">Rates by ExchangeRate-API</string>
+    <string name="rates_loading">Checking exchange rates…</string>
+    <string name="rates_unavailable">Exchange rates are unavailable</string>
+    <string name="rates_offline">Could not refresh · using saved rates</string>
+    <string name="rates_cached">Using saved rates</string>
+    <string name="rates_loaded">Exchange rates updated</string>
+    <string name="updated_at">Rates as of %1$s</string>
+    <string name="first_connection">Connect once to download rates. You can then convert offline.</string>
+    <string name="save_failed">Could not save data on this device. Your latest changes may not be available next time.</string>
+    <string name="refresh">Refresh rates</string>
+    <string name="currency_options">Options for %1$s</string>
+    <string name="move_up">Move up</string>
+    <string name="move_down">Move down</string>
+    <string name="remove_currency">Remove currency</string>
+    <string name="amount_in">Amount in %1$s</string>
+    <string name="missing_rate">No rate is available for this currency.</string>
+    <string name="choose_currency">Choose currency</string>
+    <string name="close">Close</string>
+    <string name="search_currency">Search code or currency name</string>
+    <string name="no_results">No currencies found</string>
+    <string name="already_selected">Already in your converter</string>
+    <string name="add_favorite">Add %1$s to favorites</string>
+    <string name="remove_favorite">Remove %1$s from favorites</string>
+</resources>
