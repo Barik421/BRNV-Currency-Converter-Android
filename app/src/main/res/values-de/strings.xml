@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">BRNV Currency Converter</string>
     <string name="converter_title">Währungsrechner</string>
-    <string name="converter_hint">Einfach umrechnen.</string>
+    <string name="converter_hint">Schnelle Währungs- und Krypto-Umrechnung für Reisen, Arbeit und Alltag</string>
     <string name="add_currency">＋ Währung hinzufügen</string>
     <string name="rate_disclaimer">Unverbindliche Kurse. Währungen täglich; Kryptopreise auf Anfrage, höchstens alle 5 Minuten.</string>
     <string name="rates_loading">Kurse werden geprüft…</string>

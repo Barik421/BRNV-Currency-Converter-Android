@@ -4,6 +4,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.rememberTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -31,6 +37,11 @@ internal fun AppHeader(
 ) {
     var languages by rememberSaveable { mutableStateOf(false) }
     var themes by rememberSaveable { mutableStateOf(false) }
+    val languageVisibility = remember { MutableTransitionState(false) }
+    languageVisibility.targetState = languages
+    val languageMotion = rememberTransition(languageVisibility, label = "language dialog")
+    val opacity by languageMotion.animateFloat(transitionSpec = { tween(160) }, label = "opacity") { if (it) 1f else 0f }
+    val scale by languageMotion.animateFloat(transitionSpec = { tween(200) }, label = "scale") { if (it) 1f else 0.96f }
     LaunchedEffect(languages, themes) { onMenuVisibility(languages || themes) }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -54,7 +65,10 @@ internal fun AppHeader(
                 Icon(painterResource(R.drawable.ic_appearance), stringResource(R.string.appearance),
                     tint = MaterialTheme.colorScheme.onSurface)
             }
-            DropdownMenu(expanded = themes, onDismissRequest = { themes = false }) {
+            DropdownMenu(expanded = themes, onDismissRequest = { themes = false },
+                shape = RoundedCornerShape(20.dp),
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                tonalElevation = 0.dp, shadowElevation = 4.dp) {
                 ThemeMode.entries.forEach { mode ->
                     DropdownMenuItem(text = { Text(stringResource(mode.label())) },
                         trailingIcon = { if (theme == mode) Text("✓") },
@@ -64,8 +78,11 @@ internal fun AppHeader(
             }
         }
     }
-    if (languages) {
+    if (languageVisibility.currentState || languageVisibility.targetState) {
         AlertDialog(onDismissRequest = { languages = false },
+            modifier = Modifier.graphicsLayer { alpha = opacity; scaleX = scale; scaleY = scale },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
             title = { Text(stringResource(R.string.language)) },
             text = {
                 LazyColumn(Modifier.fillMaxWidth()) {

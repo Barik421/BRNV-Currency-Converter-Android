@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">BRNV Currency Converter</string>
     <string name="converter_title">货币换算器</string>
-    <string name="converter_hint">换算，就这么简单。</string>
+    <string name="converter_hint">快速换算货币与加密货币，适用于旅行、工作和日常生活</string>
     <string name="add_currency">＋ 添加货币</string>
     <string name="rate_disclaimer">汇率仅供参考。法币每日更新；加密货币按需刷新，每 5 分钟最多一次。</string>
     <string name="rates_loading">正在检查汇率…</string>

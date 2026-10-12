@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">BRNV Currency Converter</string>
     <string name="converter_title">Конвертер валют</string>
-    <string name="converter_hint">Конвертуй без зайвого.</string>
+    <string name="converter_hint">Швидка конвертація валют і криптовалют для подорожей, роботи та щоденних розрахунків</string>
     <string name="add_currency">＋ Додати валюту</string>
     <string name="rate_disclaimer">Довідкові курси. Валюти оновлюються щодня; криптовалюти — за запитом, не частіше ніж раз на 5 хвилин.</string>
     <string name="rates_loading">Перевіряємо курси…</string>

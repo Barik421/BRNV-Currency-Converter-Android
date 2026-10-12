@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">BRNV Currency Converter</string>
     <string name="converter_title">Currency converter</string>
-    <string name="converter_hint">Simply convert.</string>
+    <string name="converter_hint">Fast currency and crypto conversion for travel, work and everyday rates</string>
     <string name="add_currency">＋ Add currency</string>
     <string name="rate_disclaimer">Indicative rates. Fiat rates update daily; crypto prices refresh on request, at most every 5 minutes.</string>
     <string name="rates_loading">Checking rates…</string>

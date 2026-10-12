@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -38,6 +39,7 @@ import com.brnv.currencyconverter.domain.RateResult
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -84,15 +86,17 @@ fun ConverterScreen(
                     AppHeader(state.theme, selectedLanguage, onLanguage, onTheme) { appearanceMenu = it }
                 }
                 item {
-                    Text(stringResource(R.string.converter_hint), style = MaterialTheme.typography.titleMedium,
+                    Text(stringResource(R.string.converter_hint), style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 item { RateStatus(state) }
                 items(state.session.currencies, key = { it }) { code ->
                     val currency = CurrencyCatalog.find(code) ?: return@items
-                    CurrencyCard(currency, state, { onEdit(code, it) },
-                        { focus.clearFocus(); selecting = code }, { onRemove(code) },
-                        { onMove(code, it) })
+                    Box(Modifier.animateItem(fadeInSpec = tween(180), placementSpec = tween(220), fadeOutSpec = tween(150))) {
+                        CurrencyCard(currency, state, { onEdit(code, it) },
+                            { focus.clearFocus(); selecting = code }, { onRemove(code) },
+                            { onMove(code, it) })
+                    }
                 }
                 item {
                     OutlinedButton(
@@ -106,19 +110,21 @@ fun ConverterScreen(
                         Text(stringResource(R.string.rate_disclaimer),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        TextButton(onClick = onReview, modifier = Modifier.testTag("rate_app")) {
-                            Text(stringResource(R.string.rate_app))
-                        }
-                        OutlinedButton(onClick = { uri.openUri("https://brnvconverter.com") },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
-                            Text(stringResource(R.string.our_website))
-                        }
-                        OutlinedButton(onClick = {
-                            uri.openUri("https://chromewebstore.google.com/detail/inbpgndjafnnohkdipdcfpdcckjabhlb")
-                        }, modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
-                            Text(stringResource(R.string.chrome_extension))
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            TextButton(onClick = onReview, modifier = Modifier.testTag("rate_app")) {
+                                Text(stringResource(R.string.rate_app))
+                            }
+                            OutlinedButton(onClick = { uri.openUri("https://brnvconverter.com") },
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
+                                Text(stringResource(R.string.our_website))
+                            }
+                            OutlinedButton(onClick = {
+                                uri.openUri("https://chromewebstore.google.com/detail/inbpgndjafnnohkdipdcfpdcckjabhlb")
+                            },
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
+                                Text(stringResource(R.string.chrome_extension))
+                            }
                         }
                     }
                 }
@@ -185,7 +191,7 @@ private fun CurrencyCard(
     val unavailable = !state.loading && !state.cryptoLoading && state.conversionRates?.rates?.containsKey(code) != true
     Card(shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onChoose, modifier = Modifier.weight(1f), enabled = state.ready,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
@@ -220,7 +226,7 @@ private fun CurrencyCard(
                     }
                 }
             }
-            Text(currency.name(locale), style = MaterialTheme.typography.bodyMedium,
+            Text(currency.name(locale), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedTextField(
                 value = state.session.amount(code, state.conversionRates), onValueChange = onEdit,
@@ -249,6 +255,11 @@ private fun CurrencySelector(
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableIntStateOf(0) }
+    val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    fun dismiss(afterHide: () -> Unit = onDismiss) {
+        scope.launch { sheet.hide(); afterHide() }
+    }
     val locale = LocalConfiguration.current.locales[0]
     val currencies = remember(query, state.favorites, category, locale) {
         CurrencyCatalog.all.filter { it.matches(query, locale) &&
@@ -256,12 +267,12 @@ private fun CurrencySelector(
             .sortedByDescending { it.code in state.favorites }
     }
     ModalBottomSheet(onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        sheetState = sheet) {
         Column(Modifier.fillMaxWidth().fillMaxHeight(0.9f).padding(horizontal = 20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.choose_currency), Modifier.weight(1f).semantics { heading() },
                     style = MaterialTheme.typography.titleLarge)
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+                TextButton(onClick = { dismiss() }) { Text(stringResource(R.string.close)) }
             }
             OutlinedTextField(value = query, onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag("currency_search"),
@@ -280,7 +291,7 @@ private fun CurrencySelector(
                     val favorite = currency.code in state.favorites
                     ListItem(
                         modifier = Modifier.testTag("select_${currency.code}")
-                            .clickable(enabled = !selected) { onSelect(currency.code) },
+                            .clickable(enabled = !selected) { dismiss { onSelect(currency.code) } },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         leadingContent = {
                             Surface(color = MaterialTheme.colorScheme.surfaceContainer,
