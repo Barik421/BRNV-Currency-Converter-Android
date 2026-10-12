@@ -119,12 +119,6 @@ fun ConverterScreen(
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
                                 Text(stringResource(R.string.our_website))
                             }
-                            OutlinedButton(onClick = {
-                                uri.openUri("https://chromewebstore.google.com/detail/inbpgndjafnnohkdipdcfpdcckjabhlb")
-                            },
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
-                                Text(stringResource(R.string.chrome_extension))
-                            }
                         }
                     }
                 }

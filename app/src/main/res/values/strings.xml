@@ -36,5 +36,4 @@
     <string name="fiat">Currencies</string>
     <string name="crypto">Crypto</string>
     <string name="our_website">Our website</string>
-    <string name="chrome_extension">Chrome extension</string>
 </resources>
