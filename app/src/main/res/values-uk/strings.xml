@@ -1,18 +1,16 @@
 <resources>
     <string name="app_name">BRNV Currency Converter</string>
     <string name="converter_title">Конвертер валют</string>
-    <string name="converter_hint">Змінюйте будь-яку суму — решта перерахується.</string>
+    <string name="converter_hint">Конвертуй без зайвого.</string>
     <string name="add_currency">＋ Додати валюту</string>
-    <string name="rate_disclaimer">Довідкові курси оновлюються щодня. Курси банків і платіжних сервісів можуть відрізнятися.</string>
-    <string name="rate_attribution">Курси від ExchangeRate-API</string>
-    <string name="rates_loading">Перевіряємо курси валют…</string>
-    <string name="rates_unavailable">Курси валют недоступні</string>
+    <string name="rate_disclaimer">Довідкові курси. Валюти оновлюються щодня; криптовалюти — за запитом, не частіше ніж раз на 5 хвилин.</string>
+    <string name="rates_loading">Перевіряємо курси…</string>
+    <string name="rates_unavailable">Курси недоступні</string>
     <string name="rates_offline">Не вдалося оновити · збережені курси</string>
     <string name="rates_cached">Використовуємо збережені курси</string>
-    <string name="rates_loaded">Курси валют оновлено</string>
-    <string name="updated_at">Курси станом на %1$s</string>
-    <string name="first_connection">Підключіться один раз, щоб завантажити курси. Потім конвертація працюватиме офлайн.</string>
-    <string name="save_failed">Не вдалося зберегти дані на пристрої. Останні зміни можуть бути недоступні наступного разу.</string>
+    <string name="rates_loaded">Курси оновлено</string>
+    <string name="first_connection">Підключіться один раз, щоб завантажити курси для роботи офлайн.</string>
+    <string name="save_failed">Не вдалося зберегти дані. Останні зміни можуть бути недоступні наступного разу.</string>
     <string name="refresh">Оновити курси</string>
     <string name="currency_options">Дії з валютою %1$s</string>
     <string name="move_up">Перемістити вище</string>
@@ -24,7 +22,19 @@
     <string name="close">Закрити</string>
     <string name="search_currency">Пошук за кодом або назвою</string>
     <string name="no_results">Валют не знайдено</string>
-    <string name="already_selected">Уже в конвертері</string>
+    <string name="already_selected">Уже вибрано</string>
     <string name="add_favorite">Додати %1$s в обране</string>
     <string name="remove_favorite">Прибрати %1$s з обраного</string>
+    <string name="language">Мова</string>
+    <string name="appearance">Оформлення</string>
+    <string name="follow_device">Як на пристрої</string>
+    <string name="theme_light">Світле</string>
+    <string name="theme_dark">Темне</string>
+    <string name="rate_app">Оцінити додаток</string>
+    <string name="store_unavailable">Не вдалося відкрити Google Play або браузер.</string>
+    <string name="all_currencies">Усі</string>
+    <string name="fiat">Валюти</string>
+    <string name="crypto">Крипто</string>
+    <string name="our_website">Наш сайт</string>
+    <string name="chrome_extension">Розширення для Chrome</string>
 </resources>

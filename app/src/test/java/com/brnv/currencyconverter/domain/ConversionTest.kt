@@ -77,8 +77,9 @@ class ConversionTest {
     }
 
     @Test fun catalogKeepsWebsiteNamesAndSearchAliases() {
-        assertEquals(77, CurrencyCatalog.all.size)
-        assertEquals(77, CurrencyCatalog.all.map { it.code }.toSet().size)
+        assertEquals(77, CurrencyCatalog.fiat.size)
+        assertEquals(19, CurrencyCatalog.crypto.size)
+        assertEquals(96, CurrencyCatalog.all.map { it.code }.toSet().size)
         assertTrue(CurrencyCatalog.find("UAH")!!.matches("гривня"))
         assertTrue(CurrencyCatalog.find("HUF")!!.matches(" forint "))
         assertTrue(CurrencyCatalog.find("EUR")!!.matches("eur"))

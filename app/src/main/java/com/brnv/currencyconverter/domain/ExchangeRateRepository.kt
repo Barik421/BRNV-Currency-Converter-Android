@@ -31,6 +31,8 @@ class CachedExchangeRateRepository(
     private val source: RateDataSource,
     private val cache: RateCache,
     private val clock: Clock = Clock.systemUTC(),
+    private val minimumRefreshInterval: Duration = Duration.ofHours(1),
+    private val maximumCacheAge: Duration = Duration.ofDays(1),
 ) : ExchangeRateRepository {
     private val mutex = Mutex()
     private var memory: RateSnapshot? = null
@@ -47,11 +49,11 @@ class CachedExchangeRateRepository(
     override suspend fun load(force: Boolean): RateResult = mutex.withLock {
         val previous = readCache()
         val now = clock.instant()
-        // Even explicit refreshes are capped to once per hour after a successful fetch.
+        // Each provider has its own refresh budget, including explicit refreshes.
         val fresh = previous != null && now >= previous.fetchedAt &&
-            now < minOf(previous.nextUpdateAt, previous.fetchedAt.plus(Duration.ofDays(1)))
+            now < minOf(previous.nextUpdateAt, previous.fetchedAt.plus(maximumCacheAge))
         val throttled = previous != null && now >= previous.fetchedAt &&
-            now < previous.fetchedAt.plus(Duration.ofHours(1))
+            now < previous.fetchedAt.plus(minimumRefreshInterval)
         if (now < retryAfter || throttled || (!force && fresh)) {
             return@withLock RateResult(previous, refreshFailed = lastFailure)
         }

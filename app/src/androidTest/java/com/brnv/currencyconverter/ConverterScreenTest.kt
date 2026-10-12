@@ -16,7 +16,7 @@ import org.junit.Test
 class ConverterScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    private fun showConverter(dark: Boolean = false) {
+    private fun showConverter(dark: Boolean = false, onRefresh: () -> Unit = {}) {
         val snapshot = RateSnapshot("USD", mapOf("USD" to BigDecimal.ONE,
             "EUR" to BigDecimal("0.8"), "UAH" to BigDecimal("40"), "GBP" to BigDecimal("0.64")),
             Instant.EPOCH, Instant.EPOCH.plusSeconds(86400), Instant.EPOCH)
@@ -31,10 +31,17 @@ class ConverterScreenTest {
                     onRemove = { state = state.copy(session = state.session.remove(it, snapshot)) },
                     onMove = { code, offset -> state = state.copy(session = state.session.move(code, offset)) },
                     onFavorite = { code -> state = state.copy(favorites = state.favorites + code) },
-                    onRefresh = {},
+                    onRefresh = onRefresh,
                 )
             }
         }
+    }
+
+    @Test fun pullDownRefreshesAtTopOfConverter() {
+        var requests = 0
+        showConverter(onRefresh = { requests++ })
+        compose.onNodeWithTag("converter_list").performTouchInput { swipeDown() }
+        compose.runOnIdle { org.junit.Assert.assertEquals(1, requests) }
     }
 
     private fun scrollTo(tag: String) {

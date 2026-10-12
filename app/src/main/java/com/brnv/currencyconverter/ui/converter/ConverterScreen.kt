@@ -1,11 +1,15 @@
 package com.brnv.currencyconverter.ui.converter
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -21,18 +25,21 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.brnv.currencyconverter.R
 import com.brnv.currencyconverter.domain.CurrencyCatalog
 import com.brnv.currencyconverter.domain.CurrencyInfo
-import com.brnv.currencyconverter.ui.theme.BrnvRed
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import com.brnv.currencyconverter.domain.ThemeMode
+import com.brnv.currencyconverter.domain.RateResult
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ConverterScreen(
     state: ConverterUiState,
@@ -42,40 +49,45 @@ fun ConverterScreen(
     onMove: (String, Int) -> Unit,
     onFavorite: (String) -> Unit,
     onRefresh: () -> Unit,
+    selectedLanguage: String = "",
+    onLanguage: (String) -> Unit = {},
+    onTheme: (ThemeMode) -> Unit = {},
+    onReview: () -> Unit = {},
+    onReviewOpportunity: () -> Unit = {},
 ) {
     // Empty string means add; a currency code means replace; null means closed.
     var selecting by rememberSaveable { mutableStateOf<String?>(null) }
+    var appearanceMenu by remember { mutableStateOf(false) }
+    val imeVisible = WindowInsets.isImeVisible
+    val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsState()
+    val reviewOpportunity by rememberUpdatedState(onReviewOpportunity)
+    LaunchedEffect(state.conversionRevision, state.ready, selecting, appearanceMenu, imeVisible, lifecycle) {
+        if (state.ready && selecting == null && !appearanceMenu && !imeVisible && lifecycle == Lifecycle.State.RESUMED) {
+            delay(15_000)
+            reviewOpportunity()
+        }
+    }
     val uri = LocalUriHandler.current
     val focus = LocalFocusManager.current
+    val refreshLabel = stringResource(R.string.refresh)
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+        PullToRefreshBox(isRefreshing = state.loading || state.cryptoLoading, onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize().padding(padding).semantics {
+                customActions = listOf(CustomAccessibilityAction(refreshLabel) { onRefresh(); true })
+            }, contentAlignment = Alignment.TopCenter) {
             LazyColumn(
                 modifier = Modifier.widthIn(max = 600.dp).fillMaxWidth().imePadding().testTag("converter_list"),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 item {
-                    Row(verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Surface(color = BrnvRed, shape = RoundedCornerShape(14.dp)) {
-                            Text("B", Modifier.padding(horizontal = 17.dp, vertical = 10.dp),
-                                color = Color.White, style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.ExtraBold)
-                        }
-                        Column {
-                            Text("BRNV", style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold)
-                            Text(stringResource(R.string.converter_title),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
+                    AppHeader(state.theme, selectedLanguage, onLanguage, onTheme) { appearanceMenu = it }
                 }
                 item {
-                    Text(stringResource(R.string.converter_hint), Modifier.padding(top = 8.dp),
-                        style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.converter_hint), style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                item { RateStatus(state, onRefresh) }
+                item { RateStatus(state) }
                 items(state.session.currencies, key = { it }) { code ->
                     val currency = CurrencyCatalog.find(code) ?: return@items
                     CurrencyCard(currency, state, { onEdit(code, it) },
@@ -94,11 +106,19 @@ fun ConverterScreen(
                         Text(stringResource(R.string.rate_disclaimer),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        TextButton(onClick = { uri.openUri("https://www.exchangerate-api.com") }) {
-                            Text(stringResource(R.string.rate_attribution))
+                        TextButton(onClick = onReview, modifier = Modifier.testTag("rate_app")) {
+                            Text(stringResource(R.string.rate_app))
                         }
-                        TextButton(onClick = { uri.openUri("https://brnvconverter.com") }) {
-                            Text("brnvconverter.com")
+                        OutlinedButton(onClick = { uri.openUri("https://brnvconverter.com") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
+                            Text(stringResource(R.string.our_website))
+                        }
+                        OutlinedButton(onClick = {
+                            uri.openUri("https://chromewebstore.google.com/detail/inbpgndjafnnohkdipdcfpdcckjabhlb")
+                        }, modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
+                            Text(stringResource(R.string.chrome_extension))
                         }
                     }
                 }
@@ -114,33 +134,37 @@ fun ConverterScreen(
 }
 
 @Composable
-private fun RateStatus(state: ConverterUiState, onRefresh: () -> Unit) {
-    val locale = LocalConfiguration.current.locales[0]
-    val snapshot = state.rates.snapshot
-    Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(stringResource(when {
-                state.loading -> R.string.rates_loading
-                snapshot == null -> R.string.rates_unavailable
-                state.rates.refreshFailed -> R.string.rates_offline
-                state.rates.cached -> R.string.rates_cached
-                else -> R.string.rates_loaded
-            }), Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                style = MaterialTheme.typography.labelLarge)
-            if (snapshot != null) {
-                val date = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-                    .withLocale(locale).withZone(ZoneId.systemDefault()).format(snapshot.updatedAt)
-                Text(stringResource(R.string.updated_at, date), style = MaterialTheme.typography.bodySmall)
-            } else if (!state.loading) {
-                Text(stringResource(R.string.first_connection), style = MaterialTheme.typography.bodySmall)
+private fun RateStatus(state: ConverterUiState) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
+            Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                ProviderStatus(state.rates, state.loading, if (state.hasCrypto) R.string.fiat else null)
+                if (state.hasCrypto) ProviderStatus(state.cryptoRates, state.cryptoLoading, R.string.crypto)
             }
-            if (state.rates.cacheWriteFailed || state.saveFailed) {
-                Text(stringResource(R.string.save_failed), color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall)
-            }
-            TextButton(onClick = onRefresh, enabled = !state.loading) {
-                Text(stringResource(R.string.refresh))
-            }
+        }
+        if (state.rates.cacheWriteFailed || state.cryptoRates.cacheWriteFailed || state.saveFailed) {
+            Text(stringResource(R.string.save_failed), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error)
+        }
+    }
+}
+
+@Composable
+private fun ProviderStatus(result: RateResult, loading: Boolean, title: Int?) {
+    val snapshot = result.snapshot
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        val status = stringResource(when {
+            loading -> R.string.rates_loading
+            snapshot == null -> R.string.rates_unavailable
+            result.refreshFailed -> R.string.rates_offline
+            result.cached -> R.string.rates_cached
+            else -> R.string.rates_loaded
+        })
+        Text(if (title == null) status else "${stringResource(title)} · $status",
+            Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            style = MaterialTheme.typography.labelMedium)
+        if (snapshot == null && !loading) {
+            Text(stringResource(R.string.first_connection), style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -158,28 +182,39 @@ private fun CurrencyCard(
     var menu by remember { mutableStateOf(false) }
     val code = currency.code
     val index = state.session.currencies.indexOf(code)
-    val unavailable = state.rates.snapshot?.rates?.containsKey(code) == false
+    val unavailable = !state.loading && !state.cryptoLoading && state.conversionRates?.rates?.containsKey(code) != true
     Card(shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onChoose, modifier = Modifier.weight(1f), enabled = state.ready) {
+                TextButton(onClick = onChoose, modifier = Modifier.weight(1f), enabled = state.ready,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
                     Text("${currency.flag}  $code  ▾", style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.fillMaxWidth())
                 }
                 Box {
                     val description = stringResource(R.string.currency_options, code)
-                    IconButton(onClick = { menu = true }, enabled = state.ready,
-                        modifier = Modifier.semantics { contentDescription = description }) {
-                        Text("⋮", style = MaterialTheme.typography.headlineSmall)
+                    FilledTonalIconButton(onClick = { menu = true }, enabled = state.ready,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                        modifier = Modifier.testTag("actions_$code").semantics { contentDescription = description }) {
+                        Icon(painterResource(R.drawable.ic_currency_actions), null, Modifier.size(20.dp))
                     }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false },
+                        shape = RoundedCornerShape(20.dp),
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        tonalElevation = 0.dp, shadowElevation = 4.dp) {
                         DropdownMenuItem(text = { Text(stringResource(R.string.move_up)) },
+                            leadingIcon = { Text("↑", style = MaterialTheme.typography.titleLarge) },
                             enabled = index > 0, onClick = { onMove(-1); menu = false })
                         DropdownMenuItem(text = { Text(stringResource(R.string.move_down)) },
+                            leadingIcon = { Text("↓", style = MaterialTheme.typography.titleLarge) },
                             enabled = index < state.session.currencies.lastIndex,
                             onClick = { onMove(1); menu = false })
                         DropdownMenuItem(text = { Text(stringResource(R.string.remove_currency)) },
+                            leadingIcon = { Text("−", style = MaterialTheme.typography.titleLarge) },
                             enabled = state.session.currencies.size > 2,
                             onClick = { onRemove(); menu = false })
                     }
@@ -188,11 +223,11 @@ private fun CurrencyCard(
             Text(currency.name(locale), style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedTextField(
-                value = state.session.amount(code, state.rates.snapshot), onValueChange = onEdit,
+                value = state.session.amount(code, state.conversionRates), onValueChange = onEdit,
                 modifier = Modifier.fillMaxWidth().testTag("amount_$code"),
                 enabled = state.ready, singleLine = true,
                 label = { Text(stringResource(R.string.amount_in, code)) },
-                placeholder = { Text(if (state.rates.snapshot == null) "—" else "0") },
+                placeholder = { Text(if (state.conversionRates == null) "—" else "0") },
                 suffix = { Text(currency.symbol) },
                 textStyle = MaterialTheme.typography.headlineSmall,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -213,9 +248,11 @@ private fun CurrencySelector(
     onSelect: (String) -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
+    var category by rememberSaveable { mutableIntStateOf(0) }
     val locale = LocalConfiguration.current.locales[0]
-    val currencies = remember(query, state.favorites) {
-        CurrencyCatalog.all.filter { it.matches(query) }
+    val currencies = remember(query, state.favorites, category, locale) {
+        CurrencyCatalog.all.filter { it.matches(query, locale) &&
+            (category == 0 || (category == 1 && !it.isCrypto) || (category == 2 && it.isCrypto)) }
             .sortedByDescending { it.code in state.favorites }
     }
     ModalBottomSheet(onDismissRequest = onDismiss,
@@ -230,29 +267,46 @@ private fun CurrencySelector(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag("currency_search"),
                 label = { Text(stringResource(R.string.search_currency)) }, singleLine = true,
                 shape = RoundedCornerShape(16.dp))
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(R.string.all_currencies, R.string.fiat, R.string.crypto).forEachIndexed { index, label ->
+                    FilterChip(selected = category == index, onClick = { category = index },
+                        label = { Text(stringResource(label)) })
+                }
+            }
             LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 24.dp)) {
                 if (currencies.isEmpty()) item { Text(stringResource(R.string.no_results)) }
                 items(currencies, key = { it.code }) { currency ->
                     val selected = currency.code in state.session.currencies
                     val favorite = currency.code in state.favorites
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = { onSelect(currency.code) }, enabled = !selected,
-                            modifier = Modifier.weight(1f).heightIn(min = 64.dp).testTag("select_${currency.code}")) {
-                            Column(Modifier.fillMaxWidth()) {
-                                Text("${currency.flag}  ${currency.code} · ${currency.symbol}",
-                                    style = MaterialTheme.typography.titleMedium)
+                    ListItem(
+                        modifier = Modifier.testTag("select_${currency.code}")
+                            .clickable(enabled = !selected) { onSelect(currency.code) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        leadingContent = {
+                            Surface(color = MaterialTheme.colorScheme.surfaceContainer,
+                                shape = RoundedCornerShape(12.dp)) {
+                                Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+                                    Text(currency.flag, style = MaterialTheme.typography.titleLarge)
+                                }
+                            }
+                        },
+                        headlineContent = { Text(currency.code, style = MaterialTheme.typography.titleMedium) },
+                        supportingContent = {
+                            Column {
                                 Text(currency.name(locale), style = MaterialTheme.typography.bodyMedium)
                                 if (selected) Text(stringResource(R.string.already_selected),
                                     style = MaterialTheme.typography.labelSmall)
                             }
-                        }
+                        },
+                        trailingContent = {
                         val description = stringResource(
                             if (favorite) R.string.remove_favorite else R.string.add_favorite, currency.code)
                         IconToggleButton(checked = favorite, onCheckedChange = { onFavorite(currency.code) },
                             modifier = Modifier.semantics { contentDescription = description }) {
                             Text(if (favorite) "★" else "☆", style = MaterialTheme.typography.headlineSmall)
                         }
-                    }
+                        },
+                    )
                 }
             }
         }

@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import com.brnv.currencyconverter.domain.ConverterSession
 import com.brnv.currencyconverter.domain.Conversion
 import com.brnv.currencyconverter.domain.CurrencyCatalog
+import com.brnv.currencyconverter.domain.ThemeMode
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -11,6 +12,7 @@ import kotlinx.coroutines.withContext
 data class SavedConverter(
     val session: ConverterSession = ConverterSession(),
     val favorites: Set<String> = emptySet(),
+    val theme: ThemeMode = ThemeMode.SYSTEM,
 )
 
 class ConverterPreferences(private val preferences: SharedPreferences) {
@@ -24,7 +26,8 @@ class ConverterPreferences(private val preferences: SharedPreferences) {
             .takeIf(Conversion::accepts) ?: "1"
         SavedConverter(ConverterSession(codes, source, input),
             preferences.getStringSet("favorites", emptySet()).orEmpty()
-                .filter { CurrencyCatalog.find(it) != null }.toSet())
+                .filter { CurrencyCatalog.find(it) != null }.toSet(),
+            ThemeMode.entries.find { it.name == preferences.getString("theme", "SYSTEM") } ?: ThemeMode.SYSTEM)
     }
 
     suspend fun save(value: SavedConverter): Unit = withContext(Dispatchers.IO) {
@@ -32,7 +35,8 @@ class ConverterPreferences(private val preferences: SharedPreferences) {
             .putString("currencies", value.session.currencies.joinToString(","))
             .putString("source", value.session.source)
             .putString("input", value.session.input)
-            .putStringSet("favorites", value.favorites.toSet()).commit()
+            .putStringSet("favorites", value.favorites.toSet())
+            .putString("theme", value.theme.name).commit()
         if (!saved) throw IOException("Could not save converter preferences")
     }
 }

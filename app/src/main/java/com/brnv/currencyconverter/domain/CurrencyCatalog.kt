@@ -9,18 +9,24 @@ data class CurrencyInfo(
     val ukrainianName: String,
     val flag: String,
     val aliases: String,
+    val coinGeckoId: String? = null,
 ) {
+    val isCrypto: Boolean get() = coinGeckoId != null
     val symbol: String get() = runCatching {
         Currency.getInstance(code).getSymbol(Locale.getDefault())
     }.getOrDefault(code)
-    fun name(locale: Locale): String = if (locale.language == "uk") ukrainianName else englishName
-    fun matches(query: String): Boolean =
-        listOf(code, englishName, ukrainianName, aliases).any { it.contains(query.trim(), ignoreCase = true) }
+    fun name(locale: Locale): String = when {
+        locale.language == "uk" -> ukrainianName
+        locale.language == "en" || isCrypto -> englishName
+        else -> runCatching { Currency.getInstance(code).getDisplayName(locale) }.getOrDefault(englishName)
+    }
+    fun matches(query: String, locale: Locale = Locale.getDefault()): Boolean =
+        listOf(code, englishName, ukrainianName, aliases, name(locale)).any { it.contains(query.trim(), ignoreCase = true) }
 }
 
 /** Fiat catalog and translations from brnvconverter.com/script.js, reviewed 2026-10-10. */
 object CurrencyCatalog {
-    val all = listOf(
+    val fiat = listOf(
         CurrencyInfo("USD", "US Dollar", "Долар США", "🇺🇸", "долар доллар долар сша доллар сша американський долар американский доллар united states dollar us dollar"),
         CurrencyInfo("EUR", "Euro", "Євро", "🇪🇺", "євро евро european euro європейська валюта европейская валюта"),
         CurrencyInfo("GBP", "British Pound", "Британський фунт", "🇬🇧", "фунт британський фунт британский фунт фунт стерлінгів фунт стерлингов pound sterling"),
@@ -99,6 +105,28 @@ object CurrencyCatalog {
         CurrencyInfo("UYU", "Uruguayan Peso", "Уругвайське песо", "🇺🇾", "уругвайське песо уругвайское песо peso uruguay"),
         CurrencyInfo("JMD", "Jamaican Dollar", "Ямайський долар", "🇯🇲", "ямайський долар ямайский доллар dollar jamaica jamaican dollar"),
     )
-    private val byCode = all.associateBy { it.code }
+    val crypto = listOf(
+        CurrencyInfo("BTC", "Bitcoin", "Біткоїн", "₿", "bitcoin btc біткоїн биткоин біткоін биткоін", "bitcoin"),
+        CurrencyInfo("ETH", "Ethereum", "Ефіріум", "Ξ", "ethereum eth ефіріум эфириум ефір эфир", "ethereum"),
+        CurrencyInfo("USDT", "Tether", "Tether", "₮", "tether usdt тезер тетер stablecoin стейблкоїн стейблкоин", "tether"),
+        CurrencyInfo("USDC", "USD Coin", "USD Coin", "$", "usd coin usdc stablecoin стейблкоїн стейблкоин", "usd-coin"),
+        CurrencyInfo("BNB", "BNB", "BNB", "◆", "bnb binance coin бінанс бинанс", "binancecoin"),
+        CurrencyInfo("SOL", "Solana", "Solana", "◎", "solana sol солана", "solana"),
+        CurrencyInfo("XRP", "XRP", "XRP", "✕", "xrp ripple ріпл рипл", "ripple"),
+        CurrencyInfo("DOGE", "Dogecoin", "Dogecoin", "Ð", "dogecoin doge догі доги", "dogecoin"),
+        CurrencyInfo("ADA", "Cardano", "Cardano", "₳", "cardano ada кардано", "cardano"),
+        CurrencyInfo("TRX", "TRON", "TRON", "T", "tron trx трон", "tron"),
+        CurrencyInfo("TON", "Toncoin", "Toncoin", "◈", "ton toncoin тон", "the-open-network"),
+        CurrencyInfo("AVAX", "Avalanche", "Avalanche", "A", "avalanche avax аваланч", "avalanche-2"),
+        CurrencyInfo("SHIB", "Shiba Inu", "Shiba Inu", "S", "shiba inu shib шиба", "shiba-inu"),
+        CurrencyInfo("DOT", "Polkadot", "Polkadot", "●", "polkadot dot полькадот", "polkadot"),
+        CurrencyInfo("LINK", "Chainlink", "Chainlink", "⬡", "chainlink link чейнлінк чейнлинк", "chainlink"),
+        CurrencyInfo("BCH", "Bitcoin Cash", "Bitcoin Cash", "Ƀ", "bitcoin cash bch біткоїн кеш биткоин кеш", "bitcoin-cash"),
+        CurrencyInfo("LTC", "Litecoin", "Litecoin", "Ł", "litecoin ltc лайткоїн лайткоин", "litecoin"),
+        CurrencyInfo("XLM", "Stellar", "Stellar", "*", "stellar xlm стеллар", "stellar"),
+        CurrencyInfo("SUI", "Sui", "Sui", "S", "sui суї суи", "sui"),
+    )
+    val all = fiat + crypto
+    private val byCode by lazy { all.associateBy { it.code } }
     fun find(code: String): CurrencyInfo? = byCode[code]
 }
