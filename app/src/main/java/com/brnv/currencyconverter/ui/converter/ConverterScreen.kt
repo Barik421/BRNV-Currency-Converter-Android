@@ -89,7 +89,10 @@ fun ConverterScreen(
                     Text(stringResource(R.string.converter_hint), style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                item { RateStatus(state) }
+                if (state.rates.needsNotice() || (state.hasCrypto && state.cryptoRates.needsNotice()) ||
+                    state.rates.cacheWriteFailed || state.cryptoRates.cacheWriteFailed || state.saveFailed) {
+                    item { RateStatus(state) }
+                }
                 items(state.session.currencies, key = { it }) { code ->
                     val currency = CurrencyCatalog.find(code) ?: return@items
                     Box(Modifier.animateItem(fadeInSpec = tween(180), placementSpec = tween(220), fadeOutSpec = tween(150))) {
@@ -106,7 +109,7 @@ fun ConverterScreen(
                     ) { Text(stringResource(R.string.add_currency)) }
                 }
                 item {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.rate_disclaimer),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -136,10 +139,12 @@ fun ConverterScreen(
 @Composable
 private fun RateStatus(state: ConverterUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
-            Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                ProviderStatus(state.rates, state.loading, if (state.hasCrypto) R.string.fiat else null)
-                if (state.hasCrypto) ProviderStatus(state.cryptoRates, state.cryptoLoading, R.string.crypto)
+        if (state.rates.needsNotice() || (state.hasCrypto && state.cryptoRates.needsNotice())) {
+            Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
+                Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (state.rates.needsNotice()) ProviderStatus(state.rates, state.loading, if (state.hasCrypto) R.string.fiat else null)
+                    if (state.hasCrypto && state.cryptoRates.needsNotice()) ProviderStatus(state.cryptoRates, state.cryptoLoading, R.string.crypto)
+                }
             }
         }
         if (state.rates.cacheWriteFailed || state.cryptoRates.cacheWriteFailed || state.saveFailed) {
@@ -149,6 +154,8 @@ private fun RateStatus(state: ConverterUiState) {
     }
 }
 
+private fun RateResult.needsNotice() = snapshot == null || cached || refreshFailed
+
 @Composable
 private fun ProviderStatus(result: RateResult, loading: Boolean, title: Int?) {
     val snapshot = result.snapshot
@@ -157,8 +164,7 @@ private fun ProviderStatus(result: RateResult, loading: Boolean, title: Int?) {
             loading -> R.string.rates_loading
             snapshot == null -> R.string.rates_unavailable
             result.refreshFailed -> R.string.rates_offline
-            result.cached -> R.string.rates_cached
-            else -> R.string.rates_loaded
+            else -> R.string.rates_cached
         })
         Text(if (title == null) status else "${stringResource(title)} · $status",
             Modifier.semantics { liveRegion = LiveRegionMode.Polite },
@@ -185,7 +191,7 @@ private fun CurrencyCard(
     val unavailable = !state.loading && !state.cryptoLoading && state.conversionRates?.rates?.containsKey(code) != true
     Card(shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onChoose, modifier = Modifier.weight(1f), enabled = state.ready,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {

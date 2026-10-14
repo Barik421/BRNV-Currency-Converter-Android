@@ -8,7 +8,6 @@
     <string name="rates_unavailable">Cotações indisponíveis</string>
     <string name="rates_offline">Falha na atualização · cotações salvas</string>
     <string name="rates_cached">Usando cotações salvas</string>
-    <string name="rates_loaded">Cotações atualizadas</string>
     <string name="first_connection">Conecte-se uma vez para baixar cotações e usar sem internet.</string>
     <string name="save_failed">Não foi possível salvar os dados. As últimas alterações podem ser perdidas.</string>
     <string name="refresh">Atualizar cotações</string>

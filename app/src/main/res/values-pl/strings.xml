@@ -8,7 +8,6 @@
     <string name="rates_unavailable">Kursy niedostępne</string>
     <string name="rates_offline">Aktualizacja nieudana · zapisane kursy</string>
     <string name="rates_cached">Korzystasz z zapisanych kursów</string>
-    <string name="rates_loaded">Kursy zaktualizowane</string>
     <string name="first_connection">Połącz się raz, aby pobrać kursy do użytku offline.</string>
     <string name="save_failed">Nie udało się zapisać danych. Ostatnie zmiany mogą zostać utracone.</string>
     <string name="refresh">Odśwież kursy</string>

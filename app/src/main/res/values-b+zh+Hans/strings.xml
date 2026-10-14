@@ -8,7 +8,6 @@
     <string name="rates_unavailable">汇率不可用</string>
     <string name="rates_offline">刷新失败 · 使用已保存汇率</string>
     <string name="rates_cached">正在使用已保存汇率</string>
-    <string name="rates_loaded">汇率已更新</string>
     <string name="first_connection">首次联网下载汇率后即可离线使用。</string>
     <string name="save_failed">无法保存数据，最近的更改可能会丢失。</string>
     <string name="refresh">刷新汇率</string>

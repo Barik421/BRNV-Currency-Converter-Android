@@ -8,7 +8,6 @@
     <string name="rates_unavailable">Tassi non disponibili</string>
     <string name="rates_offline">Aggiornamento non riuscito · tassi salvati</string>
     <string name="rates_cached">Stai usando i tassi salvati</string>
-    <string name="rates_loaded">Tassi aggiornati</string>
     <string name="first_connection">Connettiti una volta per scaricare i tassi da usare offline.</string>
     <string name="save_failed">Impossibile salvare i dati. Le ultime modifiche potrebbero non essere disponibili al prossimo avvio.</string>
     <string name="refresh">Aggiorna i tassi</string>

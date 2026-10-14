@@ -8,7 +8,6 @@
     <string name="rates_unavailable">Taux indisponibles</string>
     <string name="rates_offline">Échec de mise à jour · taux enregistrés</string>
     <string name="rates_cached">Taux enregistrés utilisés</string>
-    <string name="rates_loaded">Taux mis à jour</string>
     <string name="first_connection">Connectez-vous une fois pour télécharger les taux utilisables hors ligne.</string>
     <string name="save_failed">Impossible d’enregistrer les données. Les dernières modifications risquent d’être perdues.</string>
     <string name="refresh">Actualiser les taux</string>

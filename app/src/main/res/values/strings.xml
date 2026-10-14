@@ -8,7 +8,6 @@
     <string name="rates_unavailable">Rates unavailable</string>
     <string name="rates_offline">Could not refresh · saved rates</string>
     <string name="rates_cached">Using saved rates</string>
-    <string name="rates_loaded">Rates updated</string>
     <string name="first_connection">Connect once to download rates for offline use.</string>
     <string name="save_failed">Could not save data. Recent changes may not be available next time.</string>
     <string name="refresh">Refresh rates</string>

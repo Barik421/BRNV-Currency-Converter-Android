@@ -8,7 +8,6 @@
     <string name="rates_unavailable">Курси недоступні</string>
     <string name="rates_offline">Не вдалося оновити · збережені курси</string>
     <string name="rates_cached">Використовуємо збережені курси</string>
-    <string name="rates_loaded">Курси оновлено</string>
     <string name="first_connection">Підключіться один раз, щоб завантажити курси для роботи офлайн.</string>
     <string name="save_failed">Не вдалося зберегти дані. Останні зміни можуть бути недоступні наступного разу.</string>
     <string name="refresh">Оновити курси</string>

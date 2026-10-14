@@ -8,7 +8,6 @@
     <string name="rates_unavailable">Kurse nicht verfügbar</string>
     <string name="rates_offline">Aktualisierung fehlgeschlagen · gespeicherte Kurse</string>
     <string name="rates_cached">Gespeicherte Kurse</string>
-    <string name="rates_loaded">Kurse aktualisiert</string>
     <string name="first_connection">Einmal verbinden, um Kurse für die Offline-Nutzung zu laden.</string>
     <string name="save_failed">Daten konnten nicht gespeichert werden. Letzte Änderungen gehen möglicherweise verloren.</string>
     <string name="refresh">Kurse aktualisieren</string>

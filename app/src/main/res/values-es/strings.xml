@@ -8,7 +8,6 @@
     <string name="rates_unavailable">Tipos no disponibles</string>
     <string name="rates_offline">Error al actualizar · tipos guardados</string>
     <string name="rates_cached">Usando tipos guardados</string>
-    <string name="rates_loaded">Tipos actualizados</string>
     <string name="first_connection">Conéctate una vez para descargar tipos y usarlos sin conexión.</string>
     <string name="save_failed">No se pudieron guardar los datos. Los últimos cambios podrían perderse.</string>
     <string name="refresh">Actualizar tipos</string>
