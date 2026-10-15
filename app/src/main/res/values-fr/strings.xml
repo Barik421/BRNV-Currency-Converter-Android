@@ -35,4 +35,11 @@
     <string name="fiat">Devises</string>
     <string name="crypto">Crypto</string>
     <string name="our_website">Notre site</string>
+    <string name="support_project">Soutenir BRNV</string>
+    <string name="widget_title">Widget de taux de change</string>
+    <string name="widget_from">De</string>
+    <string name="widget_to">Vers</string>
+    <string name="widget_save">Enregistrer le widget</string>
+    <string name="widget_configure">Configurer le widget</string>
+    <string name="widget_updated">Mise à jour : %1$s</string>
 </resources>

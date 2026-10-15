@@ -44,6 +44,13 @@ class ConverterScreenTest {
         compose.runOnIdle { org.junit.Assert.assertEquals(1, requests) }
     }
 
+    @Test fun footerIsBelowFirstScreenAndAccessibleByScrolling() {
+        showConverter()
+        compose.onNodeWithTag("rate_app").assertIsNotDisplayed()
+        scrollTo("rate_app")
+        compose.onNodeWithTag("rate_app").assertIsDisplayed()
+    }
+
     private fun scrollTo(tag: String) {
         compose.onNodeWithTag("converter_list").performScrollToNode(hasTestTag(tag))
     }

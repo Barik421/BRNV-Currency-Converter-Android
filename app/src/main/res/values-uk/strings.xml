@@ -27,12 +27,19 @@
     <string name="language">Мова</string>
     <string name="appearance">Оформлення</string>
     <string name="follow_device">Як на пристрої</string>
-    <string name="theme_light">Світле</string>
-    <string name="theme_dark">Темне</string>
+    <string name="theme_light">Світла тема</string>
+    <string name="theme_dark">Темна тема</string>
     <string name="rate_app">Оцінити додаток</string>
     <string name="store_unavailable">Не вдалося відкрити Google Play або браузер.</string>
     <string name="all_currencies">Усі</string>
     <string name="fiat">Валюти</string>
     <string name="crypto">Крипто</string>
     <string name="our_website">Наш сайт</string>
+    <string name="support_project">Підтримати BRNV</string>
+    <string name="widget_title">Віджет курсу валют</string>
+    <string name="widget_from">З валюти</string>
+    <string name="widget_to">У валюту</string>
+    <string name="widget_save">Зберегти віджет</string>
+    <string name="widget_configure">Налаштувати віджет</string>
+    <string name="widget_updated">Оновлено %1$s</string>
 </resources>

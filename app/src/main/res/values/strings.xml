@@ -35,4 +35,11 @@
     <string name="fiat">Currencies</string>
     <string name="crypto">Crypto</string>
     <string name="our_website">Our website</string>
+    <string name="support_project">Support BRNV</string>
+    <string name="widget_title">Exchange rate widget</string>
+    <string name="widget_from">From</string>
+    <string name="widget_to">To</string>
+    <string name="widget_save">Save widget</string>
+    <string name="widget_configure">Configure widget</string>
+    <string name="widget_updated">Updated %1$s</string>
 </resources>

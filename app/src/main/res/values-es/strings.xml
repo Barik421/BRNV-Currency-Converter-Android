@@ -35,4 +35,11 @@
     <string name="fiat">Divisas</string>
     <string name="crypto">Cripto</string>
     <string name="our_website">Nuestro sitio web</string>
+    <string name="support_project">Apoyar a BRNV</string>
+    <string name="widget_title">Widget de tipo de cambio</string>
+    <string name="widget_from">De</string>
+    <string name="widget_to">A</string>
+    <string name="widget_save">Guardar widget</string>
+    <string name="widget_configure">Configurar widget</string>
+    <string name="widget_updated">Actualizado: %1$s</string>
 </resources>

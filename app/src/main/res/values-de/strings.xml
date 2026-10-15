@@ -35,4 +35,11 @@
     <string name="fiat">Währungen</string>
     <string name="crypto">Krypto</string>
     <string name="our_website">Unsere Website</string>
+    <string name="support_project">BRNV unterstützen</string>
+    <string name="widget_title">Wechselkurs-Widget</string>
+    <string name="widget_from">Von</string>
+    <string name="widget_to">Nach</string>
+    <string name="widget_save">Widget speichern</string>
+    <string name="widget_configure">Widget einrichten</string>
+    <string name="widget_updated">Aktualisiert: %1$s</string>
 </resources>

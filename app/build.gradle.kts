@@ -37,6 +37,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.appcompat)
     implementation(libs.play.review)
     implementation(platform(libs.androidx.compose.bom))

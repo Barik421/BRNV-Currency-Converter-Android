@@ -35,4 +35,11 @@
     <string name="fiat">法币</string>
     <string name="crypto">加密货币</string>
     <string name="our_website">我们的网站</string>
+    <string name="support_project">支持 BRNV</string>
+    <string name="widget_title">汇率小组件</string>
+    <string name="widget_from">源货币</string>
+    <string name="widget_to">目标货币</string>
+    <string name="widget_save">保存小组件</string>
+    <string name="widget_configure">设置小组件</string>
+    <string name="widget_updated">更新于 %1$s</string>
 </resources>

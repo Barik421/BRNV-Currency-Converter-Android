@@ -35,4 +35,11 @@
     <string name="fiat">Valute</string>
     <string name="crypto">Cripto</string>
     <string name="our_website">Il nostro sito</string>
+    <string name="support_project">Sostieni BRNV</string>
+    <string name="widget_title">Widget del tasso di cambio</string>
+    <string name="widget_from">Da</string>
+    <string name="widget_to">A</string>
+    <string name="widget_save">Salva widget</string>
+    <string name="widget_configure">Configura widget</string>
+    <string name="widget_updated">Aggiornato: %1$s</string>
 </resources>

@@ -31,6 +31,8 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
 import com.brnv.currencyconverter.R
 import com.brnv.currencyconverter.domain.CurrencyCatalog
 import com.brnv.currencyconverter.domain.CurrencyInfo
@@ -72,30 +74,41 @@ fun ConverterScreen(
     val uri = LocalUriHandler.current
     val focus = LocalFocusManager.current
     val refreshLabel = stringResource(R.string.refresh)
+    val itemHeights = remember { mutableStateMapOf<String, Int>() }
+    var viewportHeight by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    val showNotice = state.rates.needsNotice() || (state.hasCrypto && state.cryptoRates.needsNotice()) ||
+        state.rates.cacheWriteFailed || state.cryptoRates.cacheWriteFailed || state.saveFailed
+    val mainKeys = listOf("header", "intro", "add") + state.session.currencies + if (showNotice) listOf("status") else emptyList()
+    fun measured(key: String) = Modifier.onSizeChanged { itemHeights[key] = it.height }
+    // Fill the remaining viewport with whitespace; the footer always starts below the fold.
+    val footerGap = with(density) {
+        (viewportHeight - mainKeys.sumOf { itemHeights[it] ?: 0 }).toDp()
+    } - 24.dp - (14.dp * mainKeys.size)
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
         PullToRefreshBox(isRefreshing = state.loading || state.cryptoLoading, onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize().padding(padding).semantics {
                 customActions = listOf(CustomAccessibilityAction(refreshLabel) { onRefresh(); true })
             }, contentAlignment = Alignment.TopCenter) {
             LazyColumn(
-                modifier = Modifier.widthIn(max = 600.dp).fillMaxWidth().imePadding().testTag("converter_list"),
+                modifier = Modifier.widthIn(max = 600.dp).fillMaxWidth().fillMaxHeight().imePadding()
+                    .onSizeChanged { viewportHeight = it.height }.testTag("converter_list"),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 item {
-                    AppHeader(state.theme, selectedLanguage, onLanguage, onTheme) { appearanceMenu = it }
+                    Box(measured("header")) { AppHeader(state.theme, selectedLanguage, onLanguage, onTheme) { appearanceMenu = it } }
                 }
                 item {
-                    Text(stringResource(R.string.converter_hint), style = MaterialTheme.typography.bodyMedium,
+                    Text(stringResource(R.string.converter_hint), modifier = measured("intro"), style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                if (state.rates.needsNotice() || (state.hasCrypto && state.cryptoRates.needsNotice()) ||
-                    state.rates.cacheWriteFailed || state.cryptoRates.cacheWriteFailed || state.saveFailed) {
-                    item { RateStatus(state) }
+                if (showNotice) {
+                    item { Box(measured("status")) { RateStatus(state) } }
                 }
                 items(state.session.currencies, key = { it }) { code ->
                     val currency = CurrencyCatalog.find(code) ?: return@items
-                    Box(Modifier.animateItem(fadeInSpec = tween(180), placementSpec = tween(220), fadeOutSpec = tween(150))) {
+                    Box(measured(code).animateItem(fadeInSpec = tween(180), placementSpec = tween(220), fadeOutSpec = tween(150))) {
                         CurrencyCard(currency, state, { onEdit(code, it) },
                             { focus.clearFocus(); selecting = code }, { onRemove(code) },
                             { onMove(code, it) })
@@ -105,11 +118,11 @@ fun ConverterScreen(
                     OutlinedButton(
                         onClick = { focus.clearFocus(); selecting = "" },
                         enabled = state.ready && state.session.currencies.size < CurrencyCatalog.all.size,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("add_currency"),
+                        modifier = measured("add").fillMaxWidth().heightIn(min = 52.dp).testTag("add_currency"),
                     ) { Text(stringResource(R.string.add_currency)) }
                 }
                 item {
-                    Column(Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.padding(top = footerGap.coerceAtLeast(0.dp) + 40.dp).testTag("footer"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.rate_disclaimer),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -121,6 +134,9 @@ fun ConverterScreen(
                             OutlinedButton(onClick = { uri.openUri("https://brnvconverter.com") },
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
                                 Text(stringResource(R.string.our_website))
+                            }
+                            TextButton(onClick = { uri.openUri("https://brnvconverter.com/donate.html") }) {
+                                Text(stringResource(R.string.support_project))
                             }
                         }
                     }
