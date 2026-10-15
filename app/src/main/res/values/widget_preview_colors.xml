@@ -1,0 +1,5 @@
+<resources>
+    <color name="widget_preview_background">#FAFAFC</color>
+    <color name="widget_preview_text">#1A1C1D</color>
+    <color name="widget_preview_secondary">#62656A</color>
+</resources>

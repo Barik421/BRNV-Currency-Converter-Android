@@ -43,4 +43,10 @@
     <string name="widget_configure">Widget einrichten</string>
     <string name="widget_updated">Aktualisiert: %1$s</string>
     <string name="widget_settings">Widget-Einstellungen</string>
+    <string name="quick_title">Schnellrechner</string>
+    <string name="quick_edit">Betrag ändern</string>
+    <string name="quick_apply">Widget aktualisieren</string>
+    <string name="footer_rate">Bewerten</string>
+    <string name="footer_site">Website</string>
+    <string name="footer_support">Spenden</string>
 </resources>

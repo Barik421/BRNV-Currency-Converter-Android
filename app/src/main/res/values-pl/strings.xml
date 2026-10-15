@@ -43,4 +43,10 @@
     <string name="widget_configure">Skonfiguruj widżet</string>
     <string name="widget_updated">Aktualizacja: %1$s</string>
     <string name="widget_settings">Ustawienia widżetu</string>
+    <string name="quick_title">Szybki przelicznik</string>
+    <string name="quick_edit">Zmień kwotę</string>
+    <string name="quick_apply">Aktualizuj widżet</string>
+    <string name="footer_rate">Oceń</string>
+    <string name="footer_site">Strona</string>
+    <string name="footer_support">Wesprzyj</string>
 </resources>

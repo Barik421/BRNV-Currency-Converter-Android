@@ -16,7 +16,7 @@ data class WidgetSettings(
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val kind: String = "rate",
 ) {
-    fun valid() = kind == "rate" && currencies.size == 2 && currencies.distinct().size == 2 &&
+    fun valid() = kind in setOf("rate", "quick") && currencies.size == 2 && currencies.distinct().size == 2 &&
         currencies.all { CurrencyCatalog.find(it) != null } && Conversion.parse(amount)?.signum()?.let { it >= 0 } == true
 }
 

@@ -35,6 +35,14 @@
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
         </activity>
+        <activity android:name=".widget.QuickConverterActivity" android:exported="false"
+            android:theme="@style/Theme.BRNV.QuickConverter" android:windowSoftInputMode="adjustResize" />
+        <receiver android:name=".widget.QuickWidgetReceiver" android:exported="false" android:label="@string/quick_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/quick_widget_info" />
+        </receiver>
         <receiver android:name=".widget.RateWidgetReceiver" android:exported="false" android:label="@string/widget_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

@@ -43,4 +43,10 @@
     <string name="widget_configure">Configurer le widget</string>
     <string name="widget_updated">Mise à jour : %1$s</string>
     <string name="widget_settings">Paramètres du widget</string>
+    <string name="quick_title">Conversion rapide</string>
+    <string name="quick_edit">Modifier le montant</string>
+    <string name="quick_apply">Actualiser le widget</string>
+    <string name="footer_rate">Évaluer</string>
+    <string name="footer_site">Site web</string>
+    <string name="footer_support">Soutenir</string>
 </resources>

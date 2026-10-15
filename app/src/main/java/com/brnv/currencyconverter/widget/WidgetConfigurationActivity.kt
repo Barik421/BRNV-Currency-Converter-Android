@@ -43,12 +43,13 @@ class WidgetConfigurationActivity : AppCompatActivity() {
         val result = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
         setResult(RESULT_CANCELED, result)
         val provider = AppWidgetManager.getInstance(this).getAppWidgetInfo(widgetId)?.provider
-        if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID || provider != ComponentName(this, RateWidgetReceiver::class.java)) {
+        if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID || provider !in listOf(ComponentName(this, RateWidgetReceiver::class.java), ComponentName(this, QuickWidgetReceiver::class.java))) {
             finish(); return
         }
         lifecycleScope.launch {
             val store = WidgetSettingsStore(this@WidgetConfigurationActivity)
-            val initial = store.read(widgetId) ?: WidgetSettings()
+            val kind = if (provider?.className == QuickWidgetReceiver::class.java.name) "quick" else "rate"
+            val initial = (store.read(widgetId) ?: WidgetSettings()).copy(kind = kind)
             setContent {
                 var saving by remember { mutableStateOf(false) }
                 var failed by remember { mutableStateOf(false) }
@@ -107,7 +108,7 @@ internal fun WidgetConfiguration(initial: WidgetSettings, saving: Boolean, faile
                         }
                     }
                     if (failed) Text(stringResource(R.string.save_failed), color = MaterialTheme.colorScheme.error)
-                    Button(onClick = { onSave(WidgetSettings(listOf(from, to), amount, ThemeMode.SYSTEM)) },
+                    Button(onClick = { onSave(WidgetSettings(listOf(from, to), amount, ThemeMode.SYSTEM, initial.kind)) },
                         enabled = !saving && Conversion.parse(amount) != null && from != to,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("widget_save")) {

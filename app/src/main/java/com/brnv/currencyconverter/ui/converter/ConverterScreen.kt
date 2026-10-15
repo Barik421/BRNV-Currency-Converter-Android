@@ -1,9 +1,10 @@
 package com.brnv.currencyconverter.ui.converter
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -126,17 +127,20 @@ fun ConverterScreen(
                         Text(stringResource(R.string.rate_disclaimer),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            TextButton(onClick = onReview, modifier = Modifier.testTag("rate_app")) {
-                                Text(stringResource(R.string.rate_app))
+                        Row(Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween) {
+                            TextButton(onClick = onReview, modifier = Modifier.weight(1f).testTag("rate_app"),
+                                contentPadding = PaddingValues(horizontal = 4.dp)) {
+                                Text(stringResource(R.string.footer_rate), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                             }
-                            OutlinedButton(onClick = { uri.openUri("https://brnvconverter.com") },
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
-                                Text(stringResource(R.string.our_website))
+                            TextButton(onClick = { uri.openUri("https://brnvconverter.com") }, modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 4.dp),
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
+                                Text(stringResource(R.string.footer_site), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                             }
-                            TextButton(onClick = { uri.openUri("https://brnvconverter.com/donate.html") }) {
-                                Text(stringResource(R.string.support_project))
+                            TextButton(onClick = { uri.openUri("https://brnvconverter.com/donate.html") }, modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 4.dp)) {
+                                Text(stringResource(R.string.footer_support), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                             }
                         }
                     }

@@ -1,0 +1,11 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:gravity="center_vertical" android:padding="16dp"
+    android:background="@drawable/widget_preview_background">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="1 EUR → UAH" android:textSize="14sp" android:textColor="@color/widget_preview_secondary" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" android:text="≈ 50.34 UAH" android:textStyle="bold"
+        android:textSize="22sp" android:textColor="@color/widget_preview_text" />
+    
+</LinearLayout>

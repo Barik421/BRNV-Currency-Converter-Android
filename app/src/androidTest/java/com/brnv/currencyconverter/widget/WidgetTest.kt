@@ -43,8 +43,9 @@ class WidgetTest {
             .use { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes() }
         try {
             ids.forEachIndexed { index, id ->
-                assertTrue(manager.bindAppWidgetIdIfAllowed(id, ComponentName(context, RateWidgetReceiver::class.java)))
-                store.save(id, WidgetSettings(codes[index]))
+                val provider = if (index == 0) RateWidgetReceiver::class.java else QuickWidgetReceiver::class.java
+                assertTrue(manager.bindAppWidgetIdIfAllowed(id, ComponentName(context, provider)))
+                store.save(id, WidgetSettings(codes[index], kind = if (index == 0) "rate" else "quick"))
                 instrumentation.runOnMainSync { views += host.createView(context, id, manager.getAppWidgetInfo(id)) }
             }
             instrumentation.runOnMainSync { host.startListening() }
@@ -63,6 +64,9 @@ class WidgetTest {
                 if (!rendered) SystemClock.sleep(250)
             }
             assertTrue("Both real RemoteViews should contain their own currency pair", rendered)
+            instrumentation.runOnMainSync {
+                assertTrue(labels(views[1]).contains(context.getString(com.brnv.currencyconverter.R.string.quick_edit)))
+            }
             store.save(ids[0], WidgetSettings(listOf("GBP", "USD"), "10"))
             RateWidget.refresh(context, ids[0])
             rendered = false
