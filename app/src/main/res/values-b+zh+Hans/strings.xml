@@ -42,4 +42,5 @@
     <string name="widget_save">保存小组件</string>
     <string name="widget_configure">设置小组件</string>
     <string name="widget_updated">更新于 %1$s</string>
+    <string name="widget_settings">小组件设置</string>
 </resources>

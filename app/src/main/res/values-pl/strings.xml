@@ -42,4 +42,5 @@
     <string name="widget_save">Zapisz widżet</string>
     <string name="widget_configure">Skonfiguruj widżet</string>
     <string name="widget_updated">Aktualizacja: %1$s</string>
+    <string name="widget_settings">Ustawienia widżetu</string>
 </resources>

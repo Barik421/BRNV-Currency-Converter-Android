@@ -25,7 +25,7 @@ import com.brnv.currencyconverter.BrnvApplication
 import com.brnv.currencyconverter.R
 import com.brnv.currencyconverter.domain.Conversion
 import com.brnv.currencyconverter.domain.CurrencyCatalog
-import com.brnv.currencyconverter.domain.ThemeMode
+
 import com.brnv.currencyconverter.domain.RateResult
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -48,33 +48,52 @@ class RateWidget : GlanceAppWidget() {
             val result = data?.result
             val cached = data?.cached == true
             val date = data?.date
-            val light = Color(0xFFFAFAFC)
-            val dark = Color(0xFF1C1C1E)
-            fun colors(a: Color, b: Color): ColorProvider = when (settings?.theme ?: ThemeMode.SYSTEM) {
-                ThemeMode.SYSTEM -> ColorProvider(day = a, night = b)
-                ThemeMode.LIGHT -> ColorProvider(a)
-                ThemeMode.DARK -> ColorProvider(b)
+            val size = LocalSize.current
+            // Both dimensions constrain typography: tall/narrow widgets must still fit their text.
+            val scale = minOf(size.width.value / 240f, size.height.value / 170f).coerceIn(0.85f, 1.8f)
+            val inset = (16f * scale).dp
+            val foreground = ColorProvider(day = Color(0xFF1A1C1D), night = Color(0xFFF7F7F8))
+            val secondary = ColorProvider(day = Color(0xFF62656A), night = Color(0xFFB8BAC1))
+            val width = (size.width.value - inset.value * 2).coerceAtLeast(1f)
+            fun fitted(text: String, desired: Float, bold: Boolean = false, available: Float = width): Float {
+                val paint = android.graphics.Paint().apply {
+                    typeface = android.graphics.Typeface.create("sans-serif", if (bold) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+                    textSize = desired * context.resources.configuration.fontScale
+                }
+                return (desired * minOf(1f, available / paint.measureText(text).coerceAtLeast(1f))).coerceAtLeast(10f)
             }
-            val foreground = colors(Color(0xFF1A1C1D), Color(0xFFF7F7F8))
-            Column(GlanceModifier.fillMaxSize().background(colors(light, dark)).appWidgetBackground()
-                .cornerRadius(24.dp).padding(16.dp).clickable(actionStartActivity(configure)),
+            Column(GlanceModifier.fillMaxSize()
+                .background(ColorProvider(day = Color(0xFFFAFAFC), night = Color(0xFF1C1C1E))).appWidgetBackground()
+                .cornerRadius(24.dp).padding(inset).clickable(actionStartActivity(configure)),
                 verticalAlignment = Alignment.Vertical.CenterVertically) {
-                Text("BRNV", style = TextStyle(color = ColorProvider(Color(0xFFCE233A)), fontSize = 13.sp, fontWeight = FontWeight.Bold))
                 if (settings == null) {
-                    Text(context.getString(if (data == null) R.string.rates_loading else R.string.widget_configure), style = TextStyle(color = foreground, fontSize = 16.sp))
+                    Text(context.getString(if (data == null) R.string.rates_loading else R.string.widget_configure),
+                        style = TextStyle(color = foreground, fontSize = (16 * scale).sp))
                 } else {
-                    Text("${settings.amount} ${settings.currencies[0]} → ${settings.currencies[1]}",
-                        style = TextStyle(color = foreground, fontSize = 14.sp), maxLines = 2)
-                    Text(if (result == null) "—" else "≈ $result ${settings.currencies[1]}",
-                        style = TextStyle(color = foreground, fontSize = 22.sp, fontWeight = FontWeight.Bold), maxLines = 2)
+                    val source = "${settings.amount} ${settings.currencies[0]}"
+                    val target = settings.currencies[1]
+                    val pairFont = fitted("$source $target", 16 * scale, available = width - 36 * scale)
+                    Row(verticalAlignment = Alignment.Vertical.CenterVertically) {
+                        Text(source, style = TextStyle(color = secondary, fontSize = pairFont.sp), maxLines = 1)
+                        Spacer(GlanceModifier.width((8 * scale).dp))
+                        Image(ImageProvider(R.drawable.ic_widget_arrow), contentDescription = null,
+                            modifier = GlanceModifier.size((18 * scale).dp), colorFilter = ColorFilter.tint(secondary))
+                        Spacer(GlanceModifier.width((8 * scale).dp))
+                        Text(target, style = TextStyle(color = secondary, fontSize = pairFont.sp), maxLines = 1)
+                    }
+                    Spacer(GlanceModifier.height((10 * scale).dp))
+                    val value = if (result == null) "—" else "≈ $result $target"
+                    Text(value, style = TextStyle(color = foreground,
+                        fontSize = fitted(value, 30 * scale, bold = true).sp, fontWeight = FontWeight.Bold), maxLines = 2)
+                    Spacer(GlanceModifier.height((12 * scale).dp))
                     val status = when {
                         result == null -> context.getString(R.string.rates_unavailable)
                         cached -> context.getString(R.string.rates_cached)
                         else -> ""
                     }
-                    if (status.isNotEmpty()) Text(status, style = TextStyle(color = foreground, fontSize = 11.sp), maxLines = 2)
+                    if (status.isNotEmpty()) Text(status, style = TextStyle(color = secondary, fontSize = (11 * scale).sp), maxLines = 2)
                     if (date != null) Text(context.getString(R.string.widget_updated, date),
-                        style = TextStyle(color = foreground, fontSize = 11.sp), maxLines = 1)
+                        style = TextStyle(color = secondary, fontSize = (11 * scale).sp), maxLines = 2)
                 }
             }
         }

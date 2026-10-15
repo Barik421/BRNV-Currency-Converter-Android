@@ -6,6 +6,11 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -71,62 +76,85 @@ internal fun WidgetConfiguration(initial: WidgetSettings, saving: Boolean, faile
     var from by rememberSaveable { mutableStateOf(initial.currencies[0]) }
     var to by rememberSaveable { mutableStateOf(initial.currencies[1]) }
     var amount by rememberSaveable { mutableStateOf(initial.amount) }
-    var theme by rememberSaveable { mutableStateOf(initial.theme) }
     var choosing by rememberSaveable { mutableIntStateOf(0) }
     var query by rememberSaveable { mutableStateOf("") }
     val locale = LocalConfiguration.current.locales[0]
-    val dark = when (theme) { ThemeMode.SYSTEM -> isSystemInDarkTheme(); ThemeMode.DARK -> true; ThemeMode.LIGHT -> false }
-    BRNVCurrencyConverterTheme(darkTheme = dark) {
+    BRNVCurrencyConverterTheme(darkTheme = isSystemInDarkTheme()) {
         Scaffold { padding ->
-            Column(Modifier.padding(padding).fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("BRNV", style = MaterialTheme.typography.titleLarge)
-                Text(stringResource(R.string.widget_title), style = MaterialTheme.typography.headlineSmall)
-                OutlinedButton(onClick = { query = ""; choosing = 1 }, enabled = !saving, modifier = Modifier.fillMaxWidth()) {
-                    Text("${stringResource(R.string.widget_from)}: $from · ${CurrencyCatalog.find(from)!!.name(locale)}")
-                }
-                OutlinedButton(onClick = { query = ""; choosing = 2 }, enabled = !saving, modifier = Modifier.fillMaxWidth()) {
-                    Text("${stringResource(R.string.widget_to)}: $to · ${CurrencyCatalog.find(to)!!.name(locale)}")
-                }
-                OutlinedTextField(amount, { if (Conversion.accepts(it)) amount = it },
-                    modifier = Modifier.fillMaxWidth().testTag("widget_amount"), enabled = !saving, singleLine = true,
-                    label = { Text(stringResource(R.string.amount_in, from)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-                Text(stringResource(R.string.appearance), style = MaterialTheme.typography.titleMedium)
-                ThemeMode.entries.forEach { mode ->
-                    val label = when (mode) {
-                        ThemeMode.SYSTEM -> R.string.follow_device
-                        ThemeMode.LIGHT -> R.string.theme_light
-                        ThemeMode.DARK -> R.string.theme_dark
+            Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                Column(Modifier.widthIn(max = 600.dp).fillMaxSize().imePadding()
+                    .verticalScroll(rememberScrollState()).padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.widget_settings), modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp))
+                        IconButton(onClick = onCancel, enabled = !saving) {
+                            Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_close),
+                                contentDescription = stringResource(R.string.close))
+                        }
                     }
-                    TextButton(onClick = { theme = mode }, enabled = !saving) {
-                        Text((if (theme == mode) "✓  " else "") + stringResource(label))
+                    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
+                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            WidgetCurrencyField(stringResource(R.string.widget_from), from, !saving) { query = ""; choosing = 1 }
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                            WidgetCurrencyField(stringResource(R.string.widget_to), to, !saving) { query = ""; choosing = 2 }
+                            OutlinedTextField(amount, { if (Conversion.accepts(it)) amount = it },
+                                modifier = Modifier.fillMaxWidth().testTag("widget_amount"), enabled = !saving, singleLine = true,
+                                shape = RoundedCornerShape(16.dp),
+                                textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Medium),
+                                label = { Text(stringResource(R.string.amount_in, from)) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                        }
+                    }
+                    if (failed) Text(stringResource(R.string.save_failed), color = MaterialTheme.colorScheme.error)
+                    Button(onClick = { onSave(WidgetSettings(listOf(from, to), amount, ThemeMode.SYSTEM)) },
+                        enabled = !saving && Conversion.parse(amount) != null && from != to,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("widget_save")) {
+                        Text(stringResource(R.string.widget_save), fontWeight = FontWeight.SemiBold)
                     }
                 }
-                if (failed) Text(stringResource(R.string.save_failed), color = MaterialTheme.colorScheme.error)
-                Button(onClick = { onSave(WidgetSettings(listOf(from, to), amount, theme)) },
-                    enabled = !saving && Conversion.parse(amount) != null && from != to,
-                    modifier = Modifier.fillMaxWidth().testTag("widget_save")) { Text(stringResource(R.string.widget_save)) }
-                TextButton(onClick = onCancel, enabled = !saving) { Text(stringResource(R.string.close)) }
             }
             if (choosing != 0) AlertDialog(onDismissRequest = { choosing = 0 },
-                title = { Text(stringResource(R.string.choose_currency)) },
+                shape = RoundedCornerShape(28.dp),
+                title = { Text(stringResource(R.string.choose_currency), fontWeight = FontWeight.Bold) },
                 text = {
-                    Column {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(query, { query = it }, singleLine = true,
+                            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
                             label = { Text(stringResource(R.string.search_currency)) })
-                        LazyColumn(Modifier.heightIn(max = 320.dp)) {
+                        LazyColumn(Modifier.heightIn(max = 360.dp)) {
                             items(CurrencyCatalog.all.filter { it.matches(query, locale) && it.code != if (choosing == 1) to else from }, key = { it.code }) { currency ->
-                                TextButton(onClick = {
+                                Row(Modifier.fillMaxWidth().clickable {
                                     if (choosing == 1) from = currency.code else to = currency.code
                                     choosing = 0
-                                }, modifier = Modifier.fillMaxWidth()) {
-                                    Text("${currency.flag} ${currency.code} · ${currency.name(locale)}", color = MaterialTheme.colorScheme.onSurface)
+                                }.padding(vertical = 12.dp, horizontal = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Text(currency.flag, fontSize = 24.sp)
+                                    Column(Modifier.weight(1f)) {
+                                        Text(currency.code, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                        Text(currency.name(locale), style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
                                 }
                             }
                         }
                     }
                 }, confirmButton = { TextButton(onClick = { choosing = 0 }) { Text(stringResource(R.string.close)) } })
         }
+    }
+}
+
+@Composable
+private fun WidgetCurrencyField(label: String, code: String, enabled: Boolean, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("${CurrencyCatalog.find(code)!!.flag}  $code", style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold)
+        }
+        Text("⌄", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 22.sp)
     }
 }

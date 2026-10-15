@@ -42,4 +42,5 @@
     <string name="widget_save">Save widget</string>
     <string name="widget_configure">Configure widget</string>
     <string name="widget_updated">Updated %1$s</string>
+    <string name="widget_settings">Widget settings</string>
 </resources>

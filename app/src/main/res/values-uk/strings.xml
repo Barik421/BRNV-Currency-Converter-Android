@@ -42,4 +42,5 @@
     <string name="widget_save">Зберегти віджет</string>
     <string name="widget_configure">Налаштувати віджет</string>
     <string name="widget_updated">Оновлено %1$s</string>
+    <string name="widget_settings">Налаштування віджета</string>
 </resources>
