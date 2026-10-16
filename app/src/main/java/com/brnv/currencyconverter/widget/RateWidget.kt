@@ -46,7 +46,7 @@ class RateWidget : GlanceAppWidget() {
             val compact = size.height < (if (pairs.size == 2) 250.dp else 150.dp)
             // Both dimensions constrain typography: tall/narrow widgets must still fit their text.
             val scale = minOf(size.width.value / 240f, size.height.value / (if (pairs.size == 2) 280f else 170f)).coerceIn(0.55f, 1.8f)
-            val inset = (16f * scale).dp
+            val inset = (size.width.value / 24f).coerceIn(8f, 16f).dp
             val foreground = ColorProvider(day = Color(0xFF1A1C1D), night = Color(0xFFF7F7F8))
             val secondary = ColorProvider(day = Color(0xFF62656A), night = Color(0xFFB8BAC1))
             val width = (size.width.value - inset.value * 2).coerceAtLeast(1f)
@@ -65,36 +65,44 @@ class RateWidget : GlanceAppWidget() {
                     Text(context.getString(if (data == null) R.string.rates_loading else R.string.widget_configure),
                         style = TextStyle(color = foreground, fontSize = (16 * scale).sp))
                 } else {
-                    pairs.forEachIndexed { index, pair ->
-                        if (index > 0) {
-                            Spacer(GlanceModifier.height((8 * scale).dp))
-                            Box(GlanceModifier.fillMaxWidth().height(1.dp).background(secondary)) {}
-                            Spacer(GlanceModifier.height((8 * scale).dp))
-                        }
-                        fun label(code: String): String =
-                            if (settings.showFlags) "${CurrencyCatalog.find(code)?.flag.orEmpty()} $code" else code
-                        val source = "${pair.amount} ${label(pair.from)}"
-                        val target = label(pair.to)
-                        val pairFont = fitted("$source $target", 16 * scale, available = width - 36 * scale)
-                        Row(verticalAlignment = Alignment.Vertical.CenterVertically) {
-                            Text(source, style = TextStyle(color = secondary, fontSize = pairFont.sp), maxLines = 1)
-                            Spacer(GlanceModifier.width((8 * scale).dp))
-                            Image(ImageProvider(R.drawable.ic_widget_arrow), contentDescription = null,
-                                modifier = GlanceModifier.size((18 * scale).dp), colorFilter = ColorFilter.tint(secondary))
-                            Spacer(GlanceModifier.width((8 * scale).dp))
-                            Text(target, style = TextStyle(color = secondary, fontSize = pairFont.sp), maxLines = 1)
-                        }
-                        Spacer(GlanceModifier.height((6 * scale).dp))
-                        val value = data?.convert(pair)?.let { "≈ $it ${pair.to}" } ?: "—"
-                        Text(value, style = TextStyle(color = foreground,
-                            fontSize = fitted(value, 30 * scale, bold = true).sp, fontWeight = FontWeight.Bold), maxLines = 1)
-                    }
-                    Spacer(GlanceModifier.height((8 * scale).dp))
                     val status = when {
                         pairs.any { data?.convert(it) == null } -> context.getString(R.string.rates_unavailable)
                         cached -> context.getString(R.string.rates_cached)
                         else -> ""
                     }
+                    val fontScale = context.resources.configuration.fontScale
+                    val metadataFont = (11 * scale).coerceAtLeast(10f)
+                    val metadataLines = (if (status.isNotEmpty()) if (compact) 1 else 2 else 0) +
+                        (if (date != null && !compact) 2 else 0)
+                    val metadataHeight = if (metadataLines > 0) metadataLines * metadataFont * fontScale * 1.4f + 4 else 0f
+                    val rowHeight = ((size.height.value - 2 * inset.value - metadataHeight - (pairs.size - 1)) / pairs.size).coerceAtLeast(1f)
+                    val headerSize = (size.width.value / 18f).coerceIn(12f, 22f)
+                    val valueSize = ((rowHeight - headerSize * fontScale * 1.4f - 6f) / (1.35f * fontScale)).coerceIn(12f, 120f)
+                    pairs.forEachIndexed { index, pair ->
+                        if (index > 0) {
+                            Box(GlanceModifier.fillMaxWidth().height(1.dp).background(secondary)) {}
+                        }
+                        Column(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.Vertical.CenterVertically) {
+                            fun label(code: String): String =
+                                if (settings.showFlags) "${CurrencyCatalog.find(code)?.flag.orEmpty()} $code" else code
+                            val source = "${pair.amount} ${label(pair.from)}"
+                            val target = label(pair.to)
+                            val pairFont = fitted("$source $target", headerSize, available = width - 36 * scale)
+                            Row(verticalAlignment = Alignment.Vertical.CenterVertically) {
+                                Text(source, style = TextStyle(color = secondary, fontSize = pairFont.sp), maxLines = 1)
+                                Spacer(GlanceModifier.width((8 * scale).dp))
+                                Image(ImageProvider(R.drawable.ic_widget_arrow), contentDescription = null,
+                                    modifier = GlanceModifier.size((18 * scale).dp), colorFilter = ColorFilter.tint(secondary))
+                                Spacer(GlanceModifier.width((8 * scale).dp))
+                                Text(target, style = TextStyle(color = secondary, fontSize = pairFont.sp), maxLines = 1)
+                            }
+                            Spacer(GlanceModifier.height(4.dp))
+                            val value = data?.convert(pair)?.let { "≈ $it" } ?: "—"
+                            Text(value, style = TextStyle(color = foreground,
+                                fontSize = fitted(value, valueSize, bold = true).sp, fontWeight = FontWeight.Bold), maxLines = 1)
+                        }
+                    }
+                    if (metadataLines > 0) Spacer(GlanceModifier.height(4.dp))
                     if (status.isNotEmpty()) Text(status, style = TextStyle(color = secondary, fontSize = (11 * scale).coerceAtLeast(10f).sp), maxLines = if (compact) 1 else 2)
                     if (date != null && !compact) Text(context.getString(R.string.widget_updated, date),
                         style = TextStyle(color = secondary, fontSize = (11 * scale).coerceAtLeast(10f).sp), maxLines = if (compact) 1 else 2)

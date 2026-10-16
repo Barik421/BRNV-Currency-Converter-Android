@@ -114,6 +114,14 @@ class WidgetTest {
                 else -> 0f
             }
             var originalSize = 0f
+            fun resultSize(view: View): Float = when (view) {
+                is TextView -> if (view.text.startsWith("≈") || view.text.toString() == "—") view.textSize else 0f
+                is ViewGroup -> (0 until view.childCount).maxOfOrNull { resultSize(view.getChildAt(it)) } ?: 0f
+                else -> 0f
+            }
+            var originalResultSize = 0f
+            instrumentation.runOnMainSync { originalResultSize = resultSize(views[0]) }
+            assertTrue(originalResultSize > 0f)
             instrumentation.runOnMainSync { originalSize = sourceSize(views[0]) }
             assertTrue(originalSize > 0f)
             manager.updateAppWidgetOptions(ids[0], android.os.Bundle().apply {
@@ -127,7 +135,9 @@ class WidgetTest {
             var enlarged = false
             val resizedDeadline = SystemClock.elapsedRealtime() + 30_000
             while (!enlarged && SystemClock.elapsedRealtime() < resizedDeadline) {
-                instrumentation.runOnMainSync { enlarged = sourceSize(views[0]) > originalSize }
+                instrumentation.runOnMainSync {
+                    enlarged = sourceSize(views[0]) > originalSize && resultSize(views[0]) > originalResultSize
+                }
                 if (!enlarged) SystemClock.sleep(250)
             }
             assertTrue("Resizing must enlarge actual text, not only the widget background", enlarged)
