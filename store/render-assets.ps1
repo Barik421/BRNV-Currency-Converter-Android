@@ -2,13 +2,14 @@
 Add-Type -AssemblyName System.Drawing
 $outDir = Join-Path $PSScriptRoot 'assets'
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-function Draw-Mark($g, [single]$x, [single]$y, [single]$size) {
+function Draw-Mark($g, [single]$x, [single]$y, [single]$size, [bool]$background = $true) {
     $state = $g.Save()
     $g.TranslateTransform($x, $y)
     $g.ScaleTransform(($size / 108), ($size / 108))
     $red = [Drawing.SolidBrush]::new([Drawing.ColorTranslator]::FromHtml('#CE233A'))
-    $g.FillRectangle($red, 0, 0, 108, 108)
-    $pen = [Drawing.Pen]::new([Drawing.Color]::White, 5)
+    if ($background) { $g.FillRectangle($red, 0, 0, 108, 108) }
+    $markColor = if ($background) { [Drawing.Color]::White } else { [Drawing.ColorTranslator]::FromHtml('#FF4B5C') }
+    $pen = [Drawing.Pen]::new($markColor, 5)
     $pen.StartCap = $pen.EndCap = [Drawing.Drawing2D.LineCap]::Round
     $pen.LineJoin = [Drawing.Drawing2D.LineJoin]::Round
     $g.DrawLine($pen, 35, 43, 73, 43)
@@ -29,7 +30,7 @@ foreach ($locale in @('uk','en')) {
     $g.Clear([Drawing.ColorTranslator]::FromHtml('#141416'))
     $g.SmoothingMode = [Drawing.Drawing2D.SmoothingMode]::AntiAlias
     $g.TextRenderingHint = [Drawing.Text.TextRenderingHint]::AntiAliasGridFit
-    Draw-Mark $g 64 64 84
+    Draw-Mark $g 16 18 180 $false
     $white = [Drawing.SolidBrush]::new([Drawing.ColorTranslator]::FromHtml('#F7F7F8'))
     $muted = [Drawing.SolidBrush]::new([Drawing.ColorTranslator]::FromHtml('#B8BAC1'))
     $title = [Drawing.Font]::new('Segoe UI',42,[Drawing.FontStyle]::Bold,[Drawing.GraphicsUnit]::Pixel)
