@@ -34,7 +34,8 @@ class WidgetTest {
                 else -> emptyList()
             }
             var previousTypography = ""
-            for ((width, height) in listOf(110 to 110, 140 to 140, 180 to 180, 320 to 180)) {
+            for ((width, height, dual) in listOf(Triple(110, 110, false), Triple(140, 140, false), Triple(180, 180, false), Triple(320, 180, false), Triple(140, 140, true), Triple(180, 180, true), Triple(320, 180, true), Triple(320, 320, true))) {
+                store.save(id, WidgetSettings(second = if (dual) WidgetPair("USD", "UAH", "1") else null))
                 manager.updateAppWidgetOptions(id, android.os.Bundle().apply {
                     putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, width)
                     putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, width)
@@ -58,9 +59,25 @@ class WidgetTest {
                     val h = (height * density).toInt()
                     view.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
                     view.layout(0, 0, w, h)
-                    val result = texts(view).first { it.text.startsWith("≈") }
-                    assertTrue(texts(view).any { it.text.toString().replace('\n', ' ') == "BRNV Currency Converter" })
-                    assertTrue(texts(view).any { it.text.toString() == context.getString(com.brnv.currencyconverter.R.string.widget_current_rate) })
+                    val results = texts(view).filter { it.text.startsWith("≈") }
+                    assertEquals(if (dual) 2 else 1, results.size)
+                    results.forEach { number ->
+                        assertEquals(0, number.layout.getEllipsisCount(0))
+                        assertTrue("Rate height at $width x $height", number.height >= number.layout.height)
+                    }
+                    if (dual) {
+                        val firstBounds = android.graphics.Rect()
+                        val secondBounds = android.graphics.Rect()
+                        results[0].getDrawingRect(firstBounds)
+                        results[1].getDrawingRect(secondBounds)
+                        view.offsetDescendantRectToMyCoords(results[0], firstBounds)
+                        view.offsetDescendantRectToMyCoords(results[1], secondBounds)
+                        assertTrue(secondBounds.top - firstBounds.bottom >= 12 * density)
+                        assertTrue(results.all { it.textSize >= 16 * density })
+                    }
+                    val result = results.first()
+                    assertEquals(!(dual && height < 250), texts(view).any { it.text.toString().replace('\n', ' ') == "BRNV Currency Converter" })
+                    assertEquals(!(dual && height < 250), texts(view).any { it.text.toString() == context.getString(com.brnv.currencyconverter.R.string.widget_current_rate) })
                     previousTypography = texts(view).joinToString { "${it.text}:${it.textSize}" }
                     assertNotNull(result.layout)
                     assertEquals("Full number at $width × $height", 0, result.layout.getEllipsisCount(0))
@@ -73,7 +90,7 @@ class WidgetTest {
                     }
                     val bitmap = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
                     view.draw(android.graphics.Canvas(bitmap))
-                    java.io.File(context.cacheDir, "widget-fit-$width.png").outputStream().use {
+                    java.io.File(context.cacheDir, "widget-fit-$width-${height}-$dual.png").outputStream().use {
                         bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
                     }
                     bitmap.recycle()

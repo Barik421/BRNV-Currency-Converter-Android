@@ -43,6 +43,8 @@ class RateWidget : GlanceAppWidget() {
             val cached = data?.cached == true
             val date = data?.date
             val size = LocalSize.current
+            // Two short rows prioritize the rates over repeated headings, even when widened.
+            val compactPairLayout = pairs.size == 2 && size.height < 250.dp
             val compact = size.height < (if (pairs.size == 2) 250.dp else 210.dp)
             // Both dimensions constrain typography: tall/narrow widgets must still fit their text.
             val scale = minOf(size.width.value / 240f, size.height.value / (if (pairs.size == 2) 280f else 170f)).coerceIn(0.55f, 1.8f)
@@ -77,8 +79,10 @@ class RateWidget : GlanceAppWidget() {
                 .background(ColorProvider(day = Color(0xFFFAFAFC), night = Color(0xFF1C1C1E))).appWidgetBackground()
                 .cornerRadius(24.dp).padding(inset).clickable(actionStartActivity(configure)),
                 verticalAlignment = Alignment.Vertical.CenterVertically) {
-                Text(brand, style = TextStyle(color = accent, fontSize = brandFont.sp, fontWeight = FontWeight.Bold), maxLines = brandLines)
-                Spacer(GlanceModifier.height(if (size.height < 140.dp) 0.dp else 4.dp))
+                if (!compactPairLayout) {
+                    Text(brand, style = TextStyle(color = accent, fontSize = brandFont.sp, fontWeight = FontWeight.Bold), maxLines = brandLines)
+                    Spacer(GlanceModifier.height(if (size.height < 140.dp) 0.dp else 4.dp))
+                }
                 if (settings == null) {
                     Text(context.getString(if (data == null) R.string.rates_loading else R.string.widget_configure),
                         style = TextStyle(color = foreground, fontSize = (16 * scale).sp))
@@ -93,16 +97,18 @@ class RateWidget : GlanceAppWidget() {
                     val metadataLines = (if (status.isNotEmpty()) if (compact) 1 else 2 else 0) +
                         (if (date != null && !compact) 2 else 0)
                     val metadataHeight = if (metadataLines > 0) metadataLines * metadataFont * fontScale * 1.4f + 16 else 0f
-                    val brandHeight = brandFont * fontScale * 1.4f * brandLines + 4
+                    val brandHeight = if (compactPairLayout) 0f else brandFont * fontScale * 1.4f * brandLines + 4
                     val safetyHeight = if (size.height < 140.dp) 24f else 8f
-                    val rowHeight = ((size.height.value - safetyHeight - 2 * inset.value - metadataHeight - brandHeight - (pairs.size - 1)) / pairs.size).coerceAtLeast(1f)
+                    val rowHeight = ((size.height.value - safetyHeight - 2 * inset.value - metadataHeight - brandHeight - (pairs.size - 1) * 13f) / pairs.size).coerceAtLeast(1f)
                     val headerSize = (size.width.value / 22f).coerceIn(11f, 16f)
-                    val valueSize = minOf((rowHeight - (headerSize + captionFont) * fontScale * 1.4f - 8f) / (1.4f * fontScale), width * 0.36f).coerceIn(10f, 80f)
+                    val valueSize = minOf((rowHeight - (headerSize + if (compactPairLayout) 0f else captionFont) * fontScale * 1.4f - 8f) / (1.4f * fontScale), width * 0.36f).coerceIn(10f, 80f)
                     pairs.forEachIndexed { index, pair ->
                         if (index > 0) {
+                            Spacer(GlanceModifier.height(6.dp))
                             Box(GlanceModifier.fillMaxWidth().height(1.dp).background(secondary)) {}
+                            Spacer(GlanceModifier.height(6.dp))
                         }
-                        Column(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.Vertical.Top) {
+                        Column(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = if (pairs.size == 2) Alignment.Vertical.CenterVertically else Alignment.Vertical.Top) {
                             fun label(code: String): String =
                                 if (settings.showFlags) "${CurrencyCatalog.find(code)?.flag.orEmpty()} $code" else code
                             val source = "${pair.amount} ${label(pair.from)}"
@@ -117,7 +123,7 @@ class RateWidget : GlanceAppWidget() {
                                 Text(target, style = TextStyle(color = secondary, fontSize = pairFont.sp), maxLines = 1)
                             }
                             Spacer(GlanceModifier.height(if (size.height < 140.dp) 0.dp else 4.dp))
-                            Text(caption, style = TextStyle(color = secondary, fontSize = captionFont.sp), maxLines = 1)
+                            if (!compactPairLayout) Text(caption, style = TextStyle(color = secondary, fontSize = captionFont.sp), maxLines = 1)
                             val value = data?.convert(pair)?.let { "≈ $it" } ?: "—"
                             Text(value, style = TextStyle(color = foreground,
                                 fontSize = fitted(value, valueSize, bold = true).sp, fontWeight = FontWeight.Bold), maxLines = 1)
