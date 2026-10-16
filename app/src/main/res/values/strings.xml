@@ -43,10 +43,9 @@
     <string name="widget_configure">Configure widget</string>
     <string name="widget_updated">Updated %1$s</string>
     <string name="widget_settings">Widget settings</string>
-    <string name="quick_title">Quick converter</string>
-    <string name="quick_edit">Edit amount</string>
-    <string name="quick_apply">Update widget</string>
     <string name="footer_rate">Rate</string>
     <string name="footer_site">Website</string>
     <string name="footer_support">Support</string>
+    <string name="widget_flags">Show flags</string>
+    <string name="widget_second">Second conversion</string>
 </resources>

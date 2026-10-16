@@ -2,12 +2,4 @@
 <resources>
 
     <style name="Theme.BRNVCurrencyConverter" parent="Theme.AppCompat.DayNight.NoActionBar" />
-    <style name="Theme.BRNV.QuickConverter" parent="Theme.AppCompat.DayNight.Dialog">
-        <item name="android:windowNoTitle">true</item>
-        <item name="windowNoTitle">true</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowMinWidthMajor">90%</item>
-        <item name="android:windowMinWidthMinor">94%</item>
-        <item name="android:windowCloseOnTouchOutside">true</item>
-    </style>
 </resources>

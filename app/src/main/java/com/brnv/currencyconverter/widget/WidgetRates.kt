@@ -26,13 +26,19 @@ internal data class WidgetData(val settings: WidgetSettings?, val snapshot: Rate
             ?.let { formatWidgetAmount(it, config.currencies[1]) }
     }
     val result: String? get() = settings?.let { convert(it.amount) }
+    fun convert(pair: WidgetPair): String? {
+        val number = Conversion.parse(pair.amount) ?: return null
+        return snapshot?.let { Conversion.convert(number, pair.from, pair.to, it) }
+            ?.let { formatWidgetAmount(it, pair.to) }
+    }
 }
 
 internal suspend fun loadWidgetData(context: Context, settings: WidgetSettings?): WidgetData {
     if (settings == null) return WidgetData(null, null, false, null)
     val app = context.applicationContext as BrnvApplication
-    val needsCrypto = settings.currencies.any { CurrencyCatalog.find(it)?.isCrypto == true }
-    val needsFiat = !needsCrypto || settings.currencies.any { CurrencyCatalog.find(it)?.isCrypto == false && it != "USD" }
+    val codes = settings.pairs.flatMap { listOf(it.from, it.to) }
+    val needsCrypto = codes.any { CurrencyCatalog.find(it)?.isCrypto == true }
+    val needsFiat = !needsCrypto || codes.any { CurrencyCatalog.find(it)?.isCrypto == false && it != "USD" }
     val fiat = if (needsFiat) app.rates.load() else RateResult(null)
     val crypto = if (needsCrypto) app.cryptoRates.load() else RateResult(null)
     val snapshot = fiat.snapshot?.let { it.copy(rates = it.rates + crypto.snapshot?.rates.orEmpty()) } ?: crypto.snapshot

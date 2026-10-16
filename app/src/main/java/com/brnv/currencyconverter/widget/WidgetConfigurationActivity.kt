@@ -25,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
@@ -43,12 +45,12 @@ class WidgetConfigurationActivity : AppCompatActivity() {
         val result = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
         setResult(RESULT_CANCELED, result)
         val provider = AppWidgetManager.getInstance(this).getAppWidgetInfo(widgetId)?.provider
-        if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID || provider !in listOf(ComponentName(this, RateWidgetReceiver::class.java), ComponentName(this, QuickWidgetReceiver::class.java))) {
+        if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID || provider != ComponentName(this, RateWidgetReceiver::class.java)) {
             finish(); return
         }
         lifecycleScope.launch {
             val store = WidgetSettingsStore(this@WidgetConfigurationActivity)
-            val kind = if (provider?.className == QuickWidgetReceiver::class.java.name) "quick" else "rate"
+            val kind = "rate"
             val initial = (store.read(widgetId) ?: WidgetSettings()).copy(kind = kind)
             setContent {
                 var saving by remember { mutableStateOf(false) }
@@ -77,9 +79,16 @@ internal fun WidgetConfiguration(initial: WidgetSettings, saving: Boolean, faile
     var from by rememberSaveable { mutableStateOf(initial.currencies[0]) }
     var to by rememberSaveable { mutableStateOf(initial.currencies[1]) }
     var amount by rememberSaveable { mutableStateOf(initial.amount) }
+    var showFlags by rememberSaveable { mutableStateOf(initial.showFlags) }
+    var twoPairs by rememberSaveable { mutableStateOf(initial.second != null) }
+    var secondFrom by rememberSaveable { mutableStateOf(initial.second?.from ?: "USD") }
+    var secondTo by rememberSaveable { mutableStateOf(initial.second?.to ?: "UAH") }
+    var secondAmount by rememberSaveable { mutableStateOf(initial.second?.amount ?: "1") }
     var choosing by rememberSaveable { mutableIntStateOf(0) }
     var query by rememberSaveable { mutableStateOf("") }
     val locale = LocalConfiguration.current.locales[0]
+    val flagsLabel = stringResource(R.string.widget_flags)
+    val secondLabel = stringResource(R.string.widget_second)
     BRNVCurrencyConverterTheme(darkTheme = isSystemInDarkTheme()) {
         Scaffold { padding ->
             Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -107,9 +116,34 @@ internal fun WidgetConfiguration(initial: WidgetSettings, saving: Boolean, faile
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
                         }
                     }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.widget_flags), Modifier.weight(1f))
+                        Switch(checked = showFlags, onCheckedChange = { showFlags = it }, enabled = !saving,
+                            modifier = Modifier.testTag("widget_flags").semantics { contentDescription = flagsLabel })
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.widget_second), Modifier.weight(1f))
+                        Switch(checked = twoPairs, onCheckedChange = { twoPairs = it }, enabled = !saving,
+                            modifier = Modifier.testTag("widget_second").semantics { contentDescription = secondLabel })
+                    }
+                    if (twoPairs) Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
+                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            WidgetCurrencyField(stringResource(R.string.widget_from), secondFrom, !saving) { query = ""; choosing = 3 }
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                            WidgetCurrencyField(stringResource(R.string.widget_to), secondTo, !saving) { query = ""; choosing = 4 }
+                            OutlinedTextField(secondAmount, { if (Conversion.accepts(it)) secondAmount = it },
+                                modifier = Modifier.fillMaxWidth().testTag("widget_second_amount"), enabled = !saving, singleLine = true,
+                                shape = RoundedCornerShape(16.dp),
+                                textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Medium),
+                                label = { Text(stringResource(R.string.amount_in, secondFrom)) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                        }
+                    }
                     if (failed) Text(stringResource(R.string.save_failed), color = MaterialTheme.colorScheme.error)
-                    Button(onClick = { onSave(WidgetSettings(listOf(from, to), amount, ThemeMode.SYSTEM, initial.kind)) },
-                        enabled = !saving && Conversion.parse(amount) != null && from != to,
+                    Button(onClick = { onSave(WidgetSettings(listOf(from, to), amount, ThemeMode.SYSTEM, "rate", showFlags,
+                        if (twoPairs) WidgetPair(secondFrom, secondTo, secondAmount) else null)) },
+                        enabled = !saving && Conversion.parse(amount) != null && from != to &&
+                            (!twoPairs || WidgetPair(secondFrom, secondTo, secondAmount).valid()),
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("widget_save")) {
                         Text(stringResource(R.string.widget_save), fontWeight = FontWeight.SemiBold)
@@ -125,9 +159,9 @@ internal fun WidgetConfiguration(initial: WidgetSettings, saving: Boolean, faile
                             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
                             label = { Text(stringResource(R.string.search_currency)) })
                         LazyColumn(Modifier.heightIn(max = 360.dp)) {
-                            items(CurrencyCatalog.all.filter { it.matches(query, locale) && it.code != if (choosing == 1) to else from }, key = { it.code }) { currency ->
+                            items(CurrencyCatalog.all.filter { it.matches(query, locale) && it.code != when (choosing) { 1 -> to; 2 -> from; 3 -> secondTo; else -> secondFrom } }, key = { it.code }) { currency ->
                                 Row(Modifier.fillMaxWidth().clickable {
-                                    if (choosing == 1) from = currency.code else to = currency.code
+                                    when (choosing) { 1 -> from = currency.code; 2 -> to = currency.code; 3 -> secondFrom = currency.code; 4 -> secondTo = currency.code }
                                     choosing = 0
                                 }.padding(vertical = 12.dp, horizontal = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,

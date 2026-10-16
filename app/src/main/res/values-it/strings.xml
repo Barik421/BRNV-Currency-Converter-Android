@@ -43,10 +43,9 @@
     <string name="widget_configure">Configura widget</string>
     <string name="widget_updated">Aggiornato: %1$s</string>
     <string name="widget_settings">Impostazioni widget</string>
-    <string name="quick_title">Convertitore rapido</string>
-    <string name="quick_edit">Modifica importo</string>
-    <string name="quick_apply">Aggiorna widget</string>
     <string name="footer_rate">Valuta</string>
     <string name="footer_site">Sito web</string>
     <string name="footer_support">Sostieni</string>
+    <string name="widget_flags">Mostra bandiere</string>
+    <string name="widget_second">Seconda conversione</string>
 </resources>

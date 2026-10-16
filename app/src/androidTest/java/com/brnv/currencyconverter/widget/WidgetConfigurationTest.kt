@@ -24,10 +24,15 @@ class WidgetConfigurationTest {
         compose.onNodeWithText(context.getString(R.string.appearance)).assertDoesNotExist()
         compose.onNodeWithText("🇪🇺  EUR").assertIsDisplayed().performClick()
         compose.onNodeWithText("GBP").performClick()
+        compose.onNodeWithTag("widget_flags").performScrollTo().performClick()
+        compose.onNodeWithTag("widget_second").performScrollTo().performClick()
+        compose.onNodeWithTag("widget_second_amount").performScrollTo().performTextReplacement("25")
         compose.onNodeWithTag("widget_save").performScrollTo().performClick()
         compose.runOnIdle {
             assertEquals(listOf("GBP", "UAH"), saved?.currencies)
             assertEquals(ThemeMode.SYSTEM, saved?.theme)
+            assertEquals(true, saved?.showFlags)
+            assertEquals(WidgetPair("USD", "UAH", "25"), saved?.second)
         }
         compose.onNodeWithContentDescription(context.getString(R.string.close)).performScrollTo().performClick()
         compose.runOnIdle { assertTrue(closed) }

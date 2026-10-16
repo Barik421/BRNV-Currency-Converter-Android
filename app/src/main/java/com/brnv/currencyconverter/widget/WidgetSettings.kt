@@ -10,14 +10,23 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 
+data class WidgetPair(val from: String, val to: String, val amount: String = "1") {
+    fun valid() = from != to && listOf(from, to).all { CurrencyCatalog.find(it) != null } &&
+        Conversion.parse(amount)?.signum()?.let { it >= 0 } == true
+}
+
 data class WidgetSettings(
     val currencies: List<String> = listOf("EUR", "UAH"),
     val amount: String = "1",
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val kind: String = "rate",
+    val showFlags: Boolean = false,
+    val second: WidgetPair? = null,
 ) {
+    val pairs: List<WidgetPair> get() = listOf(WidgetPair(currencies[0], currencies[1], amount)) + listOfNotNull(second)
     fun valid() = kind in setOf("rate", "quick") && currencies.size == 2 && currencies.distinct().size == 2 &&
-        currencies.all { CurrencyCatalog.find(it) != null } && Conversion.parse(amount)?.signum()?.let { it >= 0 } == true
+        currencies.all { CurrencyCatalog.find(it) != null } && Conversion.parse(amount)?.signum()?.let { it >= 0 } == true &&
+        (second == null || second.valid())
 }
 
 /** One versioned record per widget. The list supports future multi-currency widget types. */
@@ -26,16 +35,24 @@ class WidgetSettingsStore(context: Context) {
     suspend fun read(id: Int): WidgetSettings? = withContext(Dispatchers.IO) {
         runCatching {
             val json = JSONObject(prefs.getString(id.toString(), null) ?: return@withContext null)
-            require(json.getInt("version") == 1)
+            require(json.getInt("version") in 1..2)
             val codes = json.getJSONArray("currencies")
+            val second = json.optJSONObject("second")?.let {
+                WidgetPair(it.getString("from"), it.getString("to"), it.getString("amount"))
+            }
             WidgetSettings(List(codes.length()) { codes.getString(it) }, json.getString("amount"),
-                ThemeMode.valueOf(json.getString("theme")), json.getString("kind")).takeIf { it.valid() }
+                ThemeMode.valueOf(json.getString("theme")), json.getString("kind"),
+                json.optBoolean("showFlags", false), second).takeIf { it.valid() }
         }.getOrNull()
     }
     suspend fun save(id: Int, settings: WidgetSettings) = withContext(Dispatchers.IO) {
         require(id > 0 && settings.valid())
-        val json = JSONObject().put("version", 1).put("kind", settings.kind)
+        val json = JSONObject().put("version", 2).put("kind", settings.kind)
             .put("currencies", JSONArray(settings.currencies)).put("amount", settings.amount).put("theme", settings.theme.name)
+            .put("showFlags", settings.showFlags)
+        settings.second?.let {
+            json.put("second", JSONObject().put("from", it.from).put("to", it.to).put("amount", it.amount))
+        }
         if (!prefs.edit().putString(id.toString(), json.toString()).commit()) throw IOException("Widget settings not saved")
     }
     suspend fun remove(id: Int) = withContext(Dispatchers.IO) {

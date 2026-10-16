@@ -14,11 +14,23 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WidgetTest {
+    @Test fun originalSinglePairSettingsRemainReadable() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val prefs = context.getSharedPreferences("widgets-v1", android.content.Context.MODE_PRIVATE)
+        val store = WidgetSettingsStore(context)
+        try {
+            prefs.edit().putString("90003", """{"version":1,"kind":"rate","currencies":["EUR","USD"],"amount":"5","theme":"SYSTEM"}""").commit()
+            val loaded = store.read(90003)!!
+            assertEquals("5", loaded.amount)
+            assertFalse(loaded.showFlags)
+            assertNull(loaded.second)
+        } finally { store.remove(90003) }
+    }
     @Test fun settingsSurviveNewStoreAndDeletionIsIsolated() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val store = WidgetSettingsStore(context)
         val first = WidgetSettings(listOf("EUR", "USD"), "100", ThemeMode.DARK)
-        val second = WidgetSettings(listOf("BTC", "UAH"), "0.1")
+        val second = WidgetSettings(listOf("BTC", "UAH"), "0.1", showFlags = true, second = WidgetPair("EUR", "USD", "2"))
         try {
             store.save(90001, first); store.save(90002, second)
             assertEquals(first, WidgetSettingsStore(context).read(90001))
@@ -43,9 +55,16 @@ class WidgetTest {
             .use { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes() }
         try {
             ids.forEachIndexed { index, id ->
-                val provider = if (index == 0) RateWidgetReceiver::class.java else QuickWidgetReceiver::class.java
+                val provider = RateWidgetReceiver::class.java
                 assertTrue(manager.bindAppWidgetIdIfAllowed(id, ComponentName(context, provider)))
-                store.save(id, WidgetSettings(codes[index], kind = if (index == 0) "rate" else "quick"))
+                manager.updateAppWidgetOptions(id, android.os.Bundle().apply {
+                    putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180)
+                    putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 180)
+                    putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 180)
+                    putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 180)
+                    putParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES, arrayListOf(android.util.SizeF(180f, 180f)))
+                })
+                store.save(id, WidgetSettings(codes[index], showFlags = index == 1, second = if (index == 1) WidgetPair("GBP", "EUR", "2") else null))
                 instrumentation.runOnMainSync { views += host.createView(context, id, manager.getAppWidgetInfo(id)) }
             }
             instrumentation.runOnMainSync { host.startListening() }
@@ -59,13 +78,24 @@ class WidgetTest {
             val deadline = SystemClock.elapsedRealtime() + 60_000
             while (!rendered && SystemClock.elapsedRealtime() < deadline) {
                 instrumentation.runOnMainSync {
-                    rendered = labels(views[0]).replace(Regex("\\s+"), " ").contains("1 EUR USD") && labels(views[1]).replace(Regex("\\s+"), " ").contains("1 USD UAH")
+                    rendered = labels(views[0]).replace(Regex("\\s+"), " ").contains("1 EUR USD") && labels(views[1]).replace(Regex("\\s+"), " ").contains("1 🇺🇸 USD 🇺🇦 UAH")
                 }
                 if (!rendered) SystemClock.sleep(250)
             }
             assertTrue("Both real RemoteViews should contain their own currency pair", rendered)
             instrumentation.runOnMainSync {
-                assertTrue(labels(views[1]).contains(context.getString(com.brnv.currencyconverter.R.string.quick_edit)))
+                assertTrue(labels(views[1]).contains("2 🇬🇧 GBP"))
+                assertTrue(labels(views[1]).contains("🇪🇺 EUR"))
+                val pixels = (180 * context.resources.displayMetrics.density).toInt()
+                val spec = View.MeasureSpec.makeMeasureSpec(pixels, View.MeasureSpec.EXACTLY)
+                views[1].measure(spec, spec)
+                views[1].layout(0, 0, pixels, pixels)
+                val bitmap = android.graphics.Bitmap.createBitmap(pixels, pixels, android.graphics.Bitmap.Config.ARGB_8888)
+                views[1].draw(android.graphics.Canvas(bitmap))
+                java.io.File(context.cacheDir, "widget-two-pairs.png").outputStream().use {
+                    bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+                }
+                bitmap.recycle()
             }
             store.save(ids[0], WidgetSettings(listOf("GBP", "USD"), "10"))
             RateWidget.refresh(context, ids[0])
@@ -73,7 +103,7 @@ class WidgetTest {
             val changedDeadline = SystemClock.elapsedRealtime() + 30_000
             while (!rendered && SystemClock.elapsedRealtime() < changedDeadline) {
                 instrumentation.runOnMainSync {
-                    rendered = labels(views[0]).replace(Regex("\\s+"), " ").contains("10 GBP USD") && labels(views[1]).replace(Regex("\\s+"), " ").contains("1 USD UAH")
+                    rendered = labels(views[0]).replace(Regex("\\s+"), " ").contains("10 GBP USD") && labels(views[1]).replace(Regex("\\s+"), " ").contains("1 🇺🇸 USD 🇺🇦 UAH")
                 }
                 if (!rendered) SystemClock.sleep(250)
             }

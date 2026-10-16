@@ -43,10 +43,9 @@
     <string name="widget_configure">设置小组件</string>
     <string name="widget_updated">更新于 %1$s</string>
     <string name="widget_settings">小组件设置</string>
-    <string name="quick_title">快速换算</string>
-    <string name="quick_edit">修改金额</string>
-    <string name="quick_apply">更新小组件</string>
     <string name="footer_rate">评分</string>
     <string name="footer_site">网站</string>
     <string name="footer_support">支持</string>
+    <string name="widget_flags">显示旗帜</string>
+    <string name="widget_second">第二组换算</string>
 </resources>

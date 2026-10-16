@@ -8,6 +8,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WidgetRatesTest {
+    @Test fun independentPairsShareRatesWithoutSharingAmounts() {
+        val settings = WidgetSettings(listOf("USD", "UAH"), "1", second = WidgetPair("EUR", "USD", "10"))
+        val snapshot = RateSnapshot("USD", mapOf("USD" to BigDecimal.ONE, "EUR" to BigDecimal("0.8"), "UAH" to BigDecimal("40")),
+            Instant.EPOCH, Instant.EPOCH.plusSeconds(86400), Instant.EPOCH)
+        val data = WidgetData(settings, snapshot, false, null)
+        assertEquals(2, settings.pairs.size)
+        assertEquals("40.00", data.convert(settings.pairs[0]))
+        assertEquals("12.50", data.convert(settings.pairs[1]))
+        assertFalse(settings.copy(second = WidgetPair("EUR", "EUR")).valid())
+    }
     @Test fun fiatUsesCentsButCryptoKeepsSmallAmounts() {
         assertEquals("50.34", formatWidgetAmount(BigDecimal("50.3423"), "UAH"))
         assertEquals("50.35", formatWidgetAmount(BigDecimal("50.345"), "UAH"))
