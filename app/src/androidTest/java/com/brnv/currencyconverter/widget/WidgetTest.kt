@@ -14,6 +14,75 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WidgetTest {
+    @Test fun squareAndWideWidgetsKeepTheWholeNumberAndFooterInset() = runBlocking {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val manager = AppWidgetManager.getInstance(context)
+        val host = AppWidgetHost(context, 42143)
+        val id = host.allocateAppWidgetId()
+        val store = WidgetSettingsStore(context)
+        instrumentation.uiAutomation.executeShellCommand("appwidget grantbind --package ${context.packageName} --user 0")
+            .use { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes() }
+        try {
+            assertTrue(manager.bindAppWidgetIdIfAllowed(id, ComponentName(context, RateWidgetReceiver::class.java)))
+            store.save(id, WidgetSettings())
+            lateinit var view: android.appwidget.AppWidgetHostView
+            instrumentation.runOnMainSync { view = host.createView(context, id, manager.getAppWidgetInfo(id)); host.startListening() }
+            fun texts(node: View): List<TextView> = when (node) {
+                is TextView -> listOf(node)
+                is ViewGroup -> (0 until node.childCount).flatMap { texts(node.getChildAt(it)) }
+                else -> emptyList()
+            }
+            var previousFont = 0f
+            for ((width, height) in listOf(110 to 110, 140 to 140, 180 to 180, 320 to 180)) {
+                manager.updateAppWidgetOptions(id, android.os.Bundle().apply {
+                    putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, width)
+                    putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, width)
+                    putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, height)
+                    putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, height)
+                    putParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES, arrayListOf(android.util.SizeF(width.toFloat(), height.toFloat())))
+                })
+                RateWidget.refresh(context, id)
+                var ready = false
+                val deadline = SystemClock.elapsedRealtime() + 30_000
+                while (!ready && SystemClock.elapsedRealtime() < deadline) {
+                    instrumentation.runOnMainSync {
+                        ready = texts(view).any { it.text.startsWith("≈") && it.textSize != previousFont }
+                    }
+                    if (!ready) SystemClock.sleep(100)
+                }
+                assertTrue("Rendered rate at $width × $height", ready)
+                instrumentation.runOnMainSync {
+                    val density = context.resources.displayMetrics.density
+                    val w = (width * density).toInt()
+                    val h = (height * density).toInt()
+                    view.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
+                    view.layout(0, 0, w, h)
+                    val result = texts(view).first { it.text.startsWith("≈") }
+                    previousFont = result.textSize
+                    assertNotNull(result.layout)
+                    assertEquals("Full number at $width × $height", 0, result.layout.getEllipsisCount(0))
+                    assertTrue(result.height >= result.layout.height)
+                    texts(view).filter { it.text.contains(context.getString(com.brnv.currencyconverter.R.string.widget_updated, "").trim()) }.forEach { footer ->
+                        val bounds = android.graphics.Rect()
+                        footer.getDrawingRect(bounds)
+                        view.offsetDescendantRectToMyCoords(footer, bounds)
+                        assertTrue("Footer must have bottom breathing room", h - bounds.bottom >= 18 * density)
+                    }
+                    val bitmap = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+                    view.draw(android.graphics.Canvas(bitmap))
+                    java.io.File(context.cacheDir, "widget-fit-$width.png").outputStream().use {
+                        bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+                    }
+                    bitmap.recycle()
+                }
+            }
+        } finally {
+            instrumentation.runOnMainSync { host.stopListening(); host.deleteHost() }
+            store.remove(id)
+            instrumentation.uiAutomation.executeShellCommand("appwidget revokebind --package ${context.packageName} --user 0").close()
+        }
+    }
     @Test fun originalSinglePairSettingsRemainReadable() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val prefs = context.getSharedPreferences("widgets-v1", android.content.Context.MODE_PRIVATE)

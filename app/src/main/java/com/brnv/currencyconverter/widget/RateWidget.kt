@@ -46,16 +46,26 @@ class RateWidget : GlanceAppWidget() {
             val compact = size.height < (if (pairs.size == 2) 250.dp else 150.dp)
             // Both dimensions constrain typography: tall/narrow widgets must still fit their text.
             val scale = minOf(size.width.value / 240f, size.height.value / (if (pairs.size == 2) 280f else 170f)).coerceIn(0.55f, 1.8f)
-            val inset = (size.width.value / 24f).coerceIn(8f, 16f).dp
+            val inset = (size.width.value / 16f).coerceIn(14f, 20f).dp
             val foreground = ColorProvider(day = Color(0xFF1A1C1D), night = Color(0xFFF7F7F8))
             val secondary = ColorProvider(day = Color(0xFF62656A), night = Color(0xFFB8BAC1))
             val width = (size.width.value - inset.value * 2).coerceAtLeast(1f)
             fun fitted(text: String, desired: Float, bold: Boolean = false, available: Float = width): Float {
+                val metrics = context.resources.displayMetrics
                 val paint = android.graphics.Paint().apply {
                     typeface = android.graphics.Typeface.create("sans-serif", if (bold) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
-                    textSize = desired * context.resources.configuration.fontScale
                 }
-                return (desired * minOf(1f, available / paint.measureText(text).coerceAtLeast(1f))).coerceAtLeast(10f)
+                // Leave room for launcher padding and font differences; measure actual SP pixels,
+                // including Android's non-linear font scaling, rather than assuming SP == DP.
+                val budget = ((available - 16f) * metrics.density * 0.9f).coerceAtLeast(1f)
+                var low = 6f
+                var high = desired.coerceAtLeast(low)
+                repeat(12) {
+                    val candidate = (low + high) / 2
+                    paint.textSize = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_SP, candidate, metrics)
+                    if (paint.measureText(text) <= budget) low = candidate else high = candidate
+                }
+                return low
             }
             Column(GlanceModifier.fillMaxSize()
                 .background(ColorProvider(day = Color(0xFFFAFAFC), night = Color(0xFF1C1C1E))).appWidgetBackground()
@@ -74,10 +84,10 @@ class RateWidget : GlanceAppWidget() {
                     val metadataFont = (11 * scale).coerceAtLeast(10f)
                     val metadataLines = (if (status.isNotEmpty()) if (compact) 1 else 2 else 0) +
                         (if (date != null && !compact) 2 else 0)
-                    val metadataHeight = if (metadataLines > 0) metadataLines * metadataFont * fontScale * 1.4f + 4 else 0f
+                    val metadataHeight = if (metadataLines > 0) metadataLines * metadataFont * fontScale * 1.4f + 16 else 0f
                     val rowHeight = ((size.height.value - 2 * inset.value - metadataHeight - (pairs.size - 1)) / pairs.size).coerceAtLeast(1f)
                     val headerSize = (size.width.value / 18f).coerceIn(12f, 22f)
-                    val valueSize = ((rowHeight - headerSize * fontScale * 1.4f - 6f) / (1.35f * fontScale)).coerceIn(12f, 120f)
+                    val valueSize = minOf((rowHeight - headerSize * fontScale * 1.4f - 10f) / (1.4f * fontScale), width * 0.28f).coerceIn(10f, 72f)
                     pairs.forEachIndexed { index, pair ->
                         if (index > 0) {
                             Box(GlanceModifier.fillMaxWidth().height(1.dp).background(secondary)) {}
@@ -102,10 +112,11 @@ class RateWidget : GlanceAppWidget() {
                                 fontSize = fitted(value, valueSize, bold = true).sp, fontWeight = FontWeight.Bold), maxLines = 1)
                         }
                     }
-                    if (metadataLines > 0) Spacer(GlanceModifier.height(4.dp))
+                    if (metadataLines > 0) Spacer(GlanceModifier.height(8.dp))
                     if (status.isNotEmpty()) Text(status, style = TextStyle(color = secondary, fontSize = (11 * scale).coerceAtLeast(10f).sp), maxLines = if (compact) 1 else 2)
                     if (date != null && !compact) Text(context.getString(R.string.widget_updated, date),
                         style = TextStyle(color = secondary, fontSize = (11 * scale).coerceAtLeast(10f).sp), maxLines = if (compact) 1 else 2)
+                    if (metadataLines > 0) Spacer(GlanceModifier.height(8.dp))
                 }
             }
         }
