@@ -48,4 +48,5 @@
     <string name="footer_support">Soutenir</string>
     <string name="widget_flags">Afficher les drapeaux</string>
     <string name="widget_second">Deuxième conversion</string>
+    <string name="widget_current_rate">Taux actuel :</string>
 </resources>

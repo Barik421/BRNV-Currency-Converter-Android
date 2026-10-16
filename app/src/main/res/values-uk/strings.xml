@@ -48,4 +48,5 @@
     <string name="footer_support">Підтримати</string>
     <string name="widget_flags">Показувати прапори</string>
     <string name="widget_second">Друга конверсія</string>
+    <string name="widget_current_rate">Поточний курс:</string>
 </resources>

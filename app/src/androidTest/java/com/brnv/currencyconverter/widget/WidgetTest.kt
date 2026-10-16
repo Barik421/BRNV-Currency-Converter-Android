@@ -33,7 +33,7 @@ class WidgetTest {
                 is ViewGroup -> (0 until node.childCount).flatMap { texts(node.getChildAt(it)) }
                 else -> emptyList()
             }
-            var previousFont = 0f
+            var previousTypography = ""
             for ((width, height) in listOf(110 to 110, 140 to 140, 180 to 180, 320 to 180)) {
                 manager.updateAppWidgetOptions(id, android.os.Bundle().apply {
                     putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, width)
@@ -47,7 +47,7 @@ class WidgetTest {
                 val deadline = SystemClock.elapsedRealtime() + 30_000
                 while (!ready && SystemClock.elapsedRealtime() < deadline) {
                     instrumentation.runOnMainSync {
-                        ready = texts(view).any { it.text.startsWith("≈") && it.textSize != previousFont }
+                        ready = texts(view).any { it.text.startsWith("≈") } && texts(view).joinToString { "${it.text}:${it.textSize}" } != previousTypography
                     }
                     if (!ready) SystemClock.sleep(100)
                 }
@@ -59,10 +59,12 @@ class WidgetTest {
                     view.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
                     view.layout(0, 0, w, h)
                     val result = texts(view).first { it.text.startsWith("≈") }
-                    previousFont = result.textSize
+                    assertTrue(texts(view).any { it.text.toString().replace('\n', ' ') == "BRNV Currency Converter" })
+                    assertTrue(texts(view).any { it.text.toString() == context.getString(com.brnv.currencyconverter.R.string.widget_current_rate) })
+                    previousTypography = texts(view).joinToString { "${it.text}:${it.textSize}" }
                     assertNotNull(result.layout)
                     assertEquals("Full number at $width × $height", 0, result.layout.getEllipsisCount(0))
-                    assertTrue(result.height >= result.layout.height)
+                    assertTrue("Height at $width x $height: ${result.height} vs ${result.layout.height}", result.height >= result.layout.height)
                     texts(view).filter { it.text.contains(context.getString(com.brnv.currencyconverter.R.string.widget_updated, "").trim()) }.forEach { footer ->
                         val bounds = android.graphics.Rect()
                         footer.getDrawingRect(bounds)

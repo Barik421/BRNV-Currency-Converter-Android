@@ -48,4 +48,5 @@
     <string name="footer_support">Spenden</string>
     <string name="widget_flags">Flaggen anzeigen</string>
     <string name="widget_second">Zweite Umrechnung</string>
+    <string name="widget_current_rate">Aktueller Kurs:</string>
 </resources>

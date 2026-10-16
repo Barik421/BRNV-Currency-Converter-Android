@@ -3,9 +3,15 @@
     android:orientation="vertical" android:gravity="center_vertical" android:padding="16dp"
     android:background="@drawable/widget_preview_background">
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="BRNV Currency Converter" android:textSize="11sp" android:textStyle="bold"
+        android:layout_marginBottom="8dp" android:textColor="@color/widget_preview_text" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
         android:text="1 EUR → UAH" android:textSize="14sp" android:textColor="@color/widget_preview_secondary" />
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="8dp" android:text="≈ 50.34 UAH" android:textStyle="bold"
+        android:layout_marginTop="6dp" android:text="@string/widget_current_rate"
+        android:textSize="10sp" android:textColor="@color/widget_preview_secondary" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="≈ 50.34" android:textStyle="bold"
         android:textSize="22sp" android:textColor="@color/widget_preview_text" />
     
 </LinearLayout>

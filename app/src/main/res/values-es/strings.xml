@@ -48,4 +48,5 @@
     <string name="footer_support">Apoyar</string>
     <string name="widget_flags">Mostrar banderas</string>
     <string name="widget_second">Segunda conversión</string>
+    <string name="widget_current_rate">Tipo de cambio actual:</string>
 </resources>

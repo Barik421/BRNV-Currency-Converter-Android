@@ -43,10 +43,10 @@ class RateWidget : GlanceAppWidget() {
             val cached = data?.cached == true
             val date = data?.date
             val size = LocalSize.current
-            val compact = size.height < (if (pairs.size == 2) 250.dp else 150.dp)
+            val compact = size.height < (if (pairs.size == 2) 250.dp else 210.dp)
             // Both dimensions constrain typography: tall/narrow widgets must still fit their text.
             val scale = minOf(size.width.value / 240f, size.height.value / (if (pairs.size == 2) 280f else 170f)).coerceIn(0.55f, 1.8f)
-            val inset = (size.width.value / 16f).coerceIn(14f, 20f).dp
+            val inset = if (size.height < 140.dp) 8.dp else (size.width.value / 16f).coerceIn(14f, 20f).dp
             val foreground = ColorProvider(day = Color(0xFF1A1C1D), night = Color(0xFFF7F7F8))
             val secondary = ColorProvider(day = Color(0xFF62656A), night = Color(0xFFB8BAC1))
             val width = (size.width.value - inset.value * 2).coerceAtLeast(1f)
@@ -67,10 +67,17 @@ class RateWidget : GlanceAppWidget() {
                 }
                 return low
             }
+            val brand = if (size.width < 180.dp) "BRNV\nCurrency Converter" else "BRNV Currency Converter"
+            val brandLines = if (size.width < 180.dp) 2 else 1
+            val brandFont = fitted(brand.lineSequence().maxBy { it.length }, 12f, bold = true)
+            val caption = context.getString(R.string.widget_current_rate)
+            val captionFont = fitted(caption, 11f)
             Column(GlanceModifier.fillMaxSize()
                 .background(ColorProvider(day = Color(0xFFFAFAFC), night = Color(0xFF1C1C1E))).appWidgetBackground()
                 .cornerRadius(24.dp).padding(inset).clickable(actionStartActivity(configure)),
                 verticalAlignment = Alignment.Vertical.CenterVertically) {
+                Text(brand, style = TextStyle(color = foreground, fontSize = brandFont.sp, fontWeight = FontWeight.Bold), maxLines = brandLines)
+                Spacer(GlanceModifier.height(if (size.height < 140.dp) 0.dp else 4.dp))
                 if (settings == null) {
                     Text(context.getString(if (data == null) R.string.rates_loading else R.string.widget_configure),
                         style = TextStyle(color = foreground, fontSize = (16 * scale).sp))
@@ -85,9 +92,10 @@ class RateWidget : GlanceAppWidget() {
                     val metadataLines = (if (status.isNotEmpty()) if (compact) 1 else 2 else 0) +
                         (if (date != null && !compact) 2 else 0)
                     val metadataHeight = if (metadataLines > 0) metadataLines * metadataFont * fontScale * 1.4f + 16 else 0f
-                    val rowHeight = ((size.height.value - 2 * inset.value - metadataHeight - (pairs.size - 1)) / pairs.size).coerceAtLeast(1f)
+                    val brandHeight = brandFont * fontScale * 1.4f * brandLines + 4
+                    val rowHeight = ((size.height.value - 24f - 2 * inset.value - metadataHeight - brandHeight - (pairs.size - 1)) / pairs.size).coerceAtLeast(1f)
                     val headerSize = (size.width.value / 18f).coerceIn(12f, 22f)
-                    val valueSize = minOf((rowHeight - headerSize * fontScale * 1.4f - 10f) / (1.4f * fontScale), width * 0.28f).coerceIn(10f, 72f)
+                    val valueSize = minOf((rowHeight - (headerSize + captionFont) * fontScale * 1.4f - 12f) / (1.4f * fontScale), width * 0.28f).coerceIn(10f, 72f)
                     pairs.forEachIndexed { index, pair ->
                         if (index > 0) {
                             Box(GlanceModifier.fillMaxWidth().height(1.dp).background(secondary)) {}
@@ -106,7 +114,8 @@ class RateWidget : GlanceAppWidget() {
                                 Spacer(GlanceModifier.width((8 * scale).dp))
                                 Text(target, style = TextStyle(color = secondary, fontSize = pairFont.sp), maxLines = 1)
                             }
-                            Spacer(GlanceModifier.height(4.dp))
+                            Spacer(GlanceModifier.height(if (size.height < 140.dp) 0.dp else 4.dp))
+                            Text(caption, style = TextStyle(color = secondary, fontSize = captionFont.sp), maxLines = 1)
                             val value = data?.convert(pair)?.let { "≈ $it" } ?: "—"
                             Text(value, style = TextStyle(color = foreground,
                                 fontSize = fitted(value, valueSize, bold = true).sp, fontWeight = FontWeight.Bold), maxLines = 1)

@@ -48,4 +48,5 @@
     <string name="footer_support">Sostieni</string>
     <string name="widget_flags">Mostra bandiere</string>
     <string name="widget_second">Seconda conversione</string>
+    <string name="widget_current_rate">Tasso attuale:</string>
 </resources>

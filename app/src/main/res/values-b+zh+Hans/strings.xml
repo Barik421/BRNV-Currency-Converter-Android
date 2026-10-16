@@ -48,4 +48,5 @@
     <string name="footer_support">支持</string>
     <string name="widget_flags">显示旗帜</string>
     <string name="widget_second">第二组换算</string>
+    <string name="widget_current_rate">当前汇率：</string>
 </resources>
