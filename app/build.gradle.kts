@@ -1,6 +1,14 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+}
+
+// Signing credentials are local only. CI can supply the same ignored file.
+val signingFile = rootProject.file("signing.properties")
+val releaseCredentials = Properties().apply {
+    if (signingFile.isFile) signingFile.inputStream().use { load(it) }
 }
 
 android {
@@ -19,11 +27,24 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (signingFile.isFile) {
+            create("upload") {
+                fun credential(name: String): String = requireNotNull(releaseCredentials.getProperty(name)) {
+                    "Missing $name in local signing.properties"
+                }
+                storeFile = rootProject.file(credential("storeFile"))
+                storePassword = credential("storePassword")
+                keyAlias = credential("keyAlias")
+                keyPassword = credential("keyPassword")
+            }
+        }
+    }
     buildTypes {
         release {
+            if (signingFile.isFile) signingConfig = signingConfigs.getByName("upload")
             optimization {
                 enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
             }
         }
     }

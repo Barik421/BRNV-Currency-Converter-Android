@@ -98,7 +98,11 @@ class RateWidget : GlanceAppWidget() {
                         (if (date != null && !compact) 2 else 0)
                     val metadataHeight = if (metadataLines > 0) metadataLines * metadataFont * fontScale * 1.4f + 16 else 0f
                     val brandHeight = if (compactPairLayout) 0f else brandFont * fontScale * 1.4f * brandLines + 4
-                    val safetyHeight = if (size.height < 140.dp) 24f else 8f
+                    val safetyHeight = when {
+                        size.height < 140.dp -> 24f
+                        compactPairLayout -> 4f
+                        else -> 8f
+                    }
                     val rowHeight = ((size.height.value - safetyHeight - 2 * inset.value - metadataHeight - brandHeight - (pairs.size - 1) * 13f) / pairs.size).coerceAtLeast(1f)
                     val headerSize = (size.width.value / 22f).coerceIn(11f, 16f)
                     val valueSize = minOf((rowHeight - (headerSize + if (compactPairLayout) 0f else captionFont) * fontScale * 1.4f - 8f) / (1.4f * fontScale), width * 0.36f).coerceIn(10f, 80f)
@@ -122,7 +126,7 @@ class RateWidget : GlanceAppWidget() {
                                 Spacer(GlanceModifier.width((8 * scale).dp))
                                 Text(target, style = TextStyle(color = secondary, fontSize = pairFont.sp), maxLines = 1)
                             }
-                            Spacer(GlanceModifier.height(if (size.height < 140.dp) 0.dp else 4.dp))
+                            Spacer(GlanceModifier.height(if (compactPairLayout || size.height < 140.dp) 0.dp else 4.dp))
                             if (!compactPairLayout) Text(caption, style = TextStyle(color = secondary, fontSize = captionFont.sp), maxLines = 1)
                             val value = data?.convert(pair)?.let { "≈ $it" } ?: "—"
                             Text(value, style = TextStyle(color = foreground,

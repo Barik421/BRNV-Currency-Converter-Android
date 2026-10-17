@@ -1,0 +1,5 @@
+# Room instantiates WorkManager's generated database through reflection.
+# Keep its no-argument constructor explicitly for R8 full mode.
+-keep class androidx.work.impl.WorkDatabase_Impl {
+    public <init>();
+}

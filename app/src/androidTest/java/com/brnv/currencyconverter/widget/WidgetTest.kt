@@ -73,7 +73,7 @@ class WidgetTest {
                         view.offsetDescendantRectToMyCoords(results[0], firstBounds)
                         view.offsetDescendantRectToMyCoords(results[1], secondBounds)
                         assertTrue(secondBounds.top - firstBounds.bottom >= 12 * density)
-                        assertTrue(results.all { it.textSize >= 16 * density })
+                        assertTrue("Dual rate size at $width x $height: ${results.map { it.textSize / density }}", results.all { it.textSize >= 16 * density })
                     }
                     val result = results.first()
                     assertEquals(!(dual && height < 250), texts(view).any { it.text.toString().replace('\n', ' ') == "BRNV Currency Converter" })
